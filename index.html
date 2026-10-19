@@ -286,6 +286,29 @@ select.inp{appearance:none;background:#fff url("data:image/svg+xml,%3Csvg xmlns=
 .toast i{font-size:20px;color:var(--gr2)}
 .toast button{color:var(--yl);font-weight:600;margin-left:6px;padding:4px}
 
+.side{display:none}
+@media (min-width:1000px){
+  #scrApp:not([hidden]){display:grid;grid-template-columns:250px minmax(0,1fr);min-height:100vh}
+  .side{display:flex;flex-direction:column;gap:2px;position:sticky;top:0;height:100vh;overflow-y:auto;background:#fff;border-right:1px solid var(--line);padding:18px 12px}
+  .side .brand{display:flex;align-items:center;gap:10px;padding:4px 8px 16px}
+  .side .brand .lg{width:44px;height:44px;border-radius:12px;border:1px solid var(--line);flex:none}
+  .side .brand b{display:block;font-size:15px;font-weight:600}
+  .side .brand small{display:block;font-size:11px;color:var(--muted)}
+  .side button{display:flex;align-items:center;gap:12px;padding:10px 12px;border-radius:12px;font-size:14px;color:var(--ink);text-align:left;width:100%}
+  .side button i{font-size:20px;color:var(--faint)}
+  .side button:hover{background:var(--bg)}
+  .side button[aria-current="page"]{background:var(--role-s);color:var(--role);font-weight:600}
+  .side button[aria-current="page"] i{color:var(--role)}
+  .side .cnt{margin-left:auto;background:var(--pk);color:#fff;font-size:11px;font-weight:600;border-radius:9px;padding:1px 7px}
+  .side .me{margin-top:auto;border-top:1px solid var(--line);padding-top:12px}
+  .side .me p{padding:0 12px 6px;font-size:13px;font-weight:600}
+  .side .me small{display:block;font-size:11px;color:var(--muted);font-weight:400}
+  #scrApp:not([hidden]) .nav{display:none}
+  #scrApp main{max-width:1000px;padding-bottom:40px}
+  #scrApp .hero,#scrApp .bar,#scrApp .hdr{padding-left:max(24px,calc(50% - 476px));padding-right:max(24px,calc(50% - 476px))}
+  .cgrid{grid-template-columns:repeat(4,1fr)}
+  .toast{bottom:30px}
+}
 @media (min-width:760px){
   .kgrid{grid-template-columns:repeat(4,1fr)}
   .qa{grid-template-columns:repeat(8,1fr)}
@@ -345,8 +368,8 @@ select.inp{appearance:none;background:#fff url("data:image/svg+xml,%3Csvg xmlns=
 </div>
 
 <div id="scrApp" hidden>
-  <div id="top"></div>
-  <main id="main"></main>
+  <aside class="side" id="side" aria-label="Menyu"></aside>
+  <div class="col"><div id="top"></div><main id="main"></main></div>
   <nav class="nav" id="nav" aria-label="Bo'limlar"></nav>
 </div>
 <div id="sheetRoot"></div>
@@ -462,8 +485,13 @@ const isRah=()=>RAH.includes(role());
 const isBoss=()=>role()==="admin";
 const canEdit=()=>["admin","direktor","zavuch"].includes(role());
 const canDelete=()=>["admin","direktor"].includes(role());
-const canAddStaff=()=>["admin","direktor"].includes(role());
-const canRecord=s=>!!s&&s.status!=="ketgan"&&canEdit();
+const P=k=>(S.me?.perms||[]).includes(k);
+const canStu=()=>canEdit()||P("stu");
+const canCls=()=>canEdit()||P("cls");
+const canRec=()=>canEdit()||P("rec");
+const canAddStaff=()=>["admin","direktor"].includes(role())||P("stf");
+const canRecord=s=>!!s&&s.status!=="ketgan"&&canRec();
+const PERMS=[["stu","ti-user-plus","--bl","O'quvchi qo'shish va tahrirlash","Yangi qabul, ma'lumotlarni to'g'rilash"],["stf","ti-id-badge-2","--gr","Xodim qo'shish va tahrirlash","PIN so'rovi sizga keladi"],["cls","ti-school","--or","Sinflar va dars yuklamasi","Sinf ochish, o'qituvchi biriktirish"],["xls","ti-file-spreadsheet","--vi","Excel'dan ma'lumot yuklash","Ko'p o'quvchini bir yo'la kiritish"],["rec","ti-scale","--pk","Rag'bat va hayfsan yozish","Istalgan o'quvchiga"]];
 const cfgTypes=()=>{ const t=S.cfg.types||DEF_TYPES; return {neg:(t.neg||[]).filter(x=>!x.off), pos:(t.pos||[]).filter(x=>!x.off)}; };
 const allTypes=()=>{ const t=S.cfg.types||DEF_TYPES; return [...(t.neg||[]),...(t.pos||[])]; };
 const typeOf=id=>allTypes().find(x=>x.id===id);
@@ -510,7 +538,7 @@ onAuthStateChanged(auth, async user=>{
 });
 document.querySelectorAll("#scrWelcome [data-who]").forEach(b=>b.onclick=()=>{ S.who=b.dataset.who; showPin(); });
 $("pinBack").onclick=()=>{ document.body.className=""; show("scrWelcome"); };
-const meFrom=(pin,p)=>({pin,name:p.name,role:p.role,staffId:p.staffId||"",kids:p.kids||[]});
+const meFrom=(pin,p)=>({pin,name:p.name,role:p.role,staffId:p.staffId||"",kids:p.kids||[],perms:p.perms||[]});
 async function verifySession(){
   if(!navigator.onLine||!S.me) return;
   try{
@@ -630,8 +658,12 @@ function render(){
   const b=v.bar;
   $("top").innerHTML=b?`<header class="bar">${b.back!==undefined?`<button class="ib" data-act="back" data-v="${esc(b.back)}" aria-label="Orqaga"><i class="ti ti-arrow-left"></i></button>`:'<span style="width:6px"></span>'}<div class="t"><b>${esc(b.t)}</b>${b.s?`<small>${esc(b.s)}</small>`:""}</div>${b.acts||""}</header>`:"";
   $("main").innerHTML=v.html||"";
+  const fe=$("main").firstElementChild; if(fe&&(fe.classList.contains("hdr")||fe.classList.contains("hero"))) $("top").append(fe);
   $("main").style.paddingTop=b?"":"0";
   const items=navItems(), cur=SECTION[name]||name;
+  const sideItems=isRah()?[["home","ti-home","Bosh sahifa"],["students","ti-users","O'quvchilar"],["classes","ti-school","Sinflar"],["staff","ti-id-badge-2","Xodimlar"],["stats","ti-chart-bar","Statistika"],["notif","ti-bell","Xabarlar"],...(isBoss()?[["pins","ti-key","PIN kodlar"],["settings","ti-settings","Sozlamalar"]]:[["me","ti-user","Profil"]])]:[];
+  const scur=name==="stu"?"students":name==="cls"?"classes":name==="st"?"staff":["set","log","archive"].includes(name)?"settings":name;
+  $("side").innerHTML=sideItems.length?`<div class="brand"><span class="lg"></span><div><b>Maktab Nazorati</b><small>${esc(S.cfg.name||"")}</small></div></div>${sideItems.map(([k,i,t])=>`<button data-go="${k}" ${scur===k?'aria-current="page"':""}><i class="ti ${i}"></i>${t}${k==="notif"&&openReqs().filter(reqActionable).length?`<span class="cnt">${openReqs().filter(reqActionable).length}</span>`:""}</button>`).join("")}<div class="me"><p>${esc(S.me.name)}<small>${esc(ROLE[role()]?.n||"")}</small></p><button data-act="logoutAsk"><i class="ti ti-logout"></i>Chiqish</button></div>`:"";
   $("nav").hidden=!items.length;
   const unread=openReqs().filter(r=>reqActionable(r)).length;
   $("nav").innerHTML=items.map(([k,i,t])=>`<button data-go="${k}" ${cur===k?'aria-current="page"':""}><span class="ni"><i class="ti ${i}"></i>${k==="notif"&&unread?`<b>${unread}</b>`:""}</span><span>${t}</span></button>`).join("");
@@ -773,7 +805,7 @@ VIEWS.students=()=>{
     <div class="chips" style="margin-top:0"><select class="chip soft" data-ui="scls" aria-label="Sinf">${clsOpts.map(([v,n])=>`<option value="${v}" ${S.ui.scls===v?"selected":""}>${esc(n)}</option>`).join("")}</select><select class="chip soft" data-ui="ssort" aria-label="Saralash"><option value="name">Saralash: ism</option><option value="score" ${S.ui.ssort==="score"?"selected":""}>Saralash: intizom</option><option value="cls" ${S.ui.ssort==="cls"?"selected":""}>Saralash: sinf</option></select></div>
     <div id="lst">${stuListHtml()}</div>
     <div class="legend"><span>${tag("85+","--gr-s","--gr")} yaxshi</span><span>${tag(`${thr().bad}–${thr().good-1}`,"--or-s","--or")} diqqat</span><span>${tag(`${thr().bad} dan past`,"--pk-s","--pk")} xavf</span></div>
-    ${canEdit()?`<div class="btns"><button class="btn" data-act="stuNew"><i class="ti ti-user-plus"></i>O'quvchi qo'shish</button></div>`:""}`;
+    ${canStu()?`<div class="btns"><button class="btn" data-act="stuNew"><i class="ti ti-user-plus"></i>O'quvchi qo'shish</button></div>`:""}`;
   return {bar:{t:"O'quvchilar",back:"home"},html,list:stuListHtml};
 };
 function stuListHtml(){
@@ -814,31 +846,31 @@ VIEWS.stu=(id,tab="umumiy")=>{
     if(s.tel) b.push(`<a class="sbtn" style="background:var(--bl-s);color:var(--bl);text-decoration:none" href="${telHref(s.tel)}"><i class="ti ti-phone"></i>Ota-onaga qo'ng'iroq</a>`);
     if(isBoss()) b.push(`<button class="sbtn" style="background:#fff;color:var(--or);border:1px solid var(--line)" data-act="kidPin" data-sid="${id}"><i class="ti ti-key"></i>Ota-ona PIN kodi</button>`);
     if(b.length) h+=`<div class="btn2" style="margin:12px 14px 0">${b.join("")}</div>`;
-    if(s.status==="faol"||!s.status){ if(canEdit()) h+=`<div class="btns"><button class="btn redo" data-act="leaveAsk" data-sid="${id}"><i class="ti ti-user-minus"></i>Maktabdan ketdi deb belgilash</button></div>`; }
+    if(s.status==="faol"||!s.status){ if(canStu()) h+=`<div class="btns"><button class="btn redo" data-act="leaveAsk" data-sid="${id}"><i class="ti ti-user-minus"></i>Maktabdan ketdi deb belgilash</button></div>`; }
     else if(s.status==="ketmoqda"){
       h+=`<div class="note" style="background:var(--pk-s)"><i class="ti ti-user-minus" style="color:var(--pk)"></i><div><b>Ketish xabari yuborilgan</b>${esc(s.ketishSabab||"")}${canDelete()?"":"<br>Direktor yoki Bosh admin tasdiqlaydi"}</div></div>`;
       if(canDelete()){ const rq=S.reqs.find(r=>r.type==="ketish"&&r.sid===id&&r.status==="open"); h+=`<div class="btn2" style="margin:10px 14px 0"><button class="btn red" data-act="leaveOk" data-sid="${id}" data-rid="${rq?.id||""}">Tasdiqlash</button><button class="btn ghost" data-act="leaveNo" data-sid="${id}" data-rid="${rq?.id||""}">Rad etish</button></div>`; }
     } else if(s.status==="ketgan"&&canDelete()) h+=`<div class="btns"><button class="btn ghost" data-act="stuBack" data-sid="${id}"><i class="ti ti-refresh"></i>Qayta faollashtirish</button></div>`;
   }
-  return {bar:{t:"O'quvchi",back:"students",acts:canEdit()?`<button class="ib" data-act="stuEdit" data-sid="${id}" aria-label="Tahrirlash"><i class="ti ti-pencil"></i></button>`:""},html:h};
+  return {bar:{t:"O'quvchi",back:"students",acts:canStu()?`<button class="ib" data-act="stuEdit" data-sid="${id}" aria-label="Tahrirlash"><i class="ti ti-pencil"></i></button>`:""},html:h};
 };
 
 /* ================= CLASSES ================= */
-const GRADE_GR={ all:[1,11], g1:[1,4], g2:[5,9], g3:[10,11] };
+const GRADE_GR={ all:[1,11], g12:[1,2], g34:[3,4], g2:[5,9], g3:[10,11] };
 VIEWS.classes=()=>{
-  const cl=clsList(), f=S.ui.cg||"all", [a,b]=GRADE_GR[f];
+  const cl=clsList(), f=S.ui.cg||"all", [a,b]=GRADE_GR[f]||GRADE_GR.all;
   const chip=(k,t)=>`<button class="chip" data-act="ui" data-k="cg" data-v="${k}" aria-pressed="${f===k}">${t}</button>`;
   const l=cl.filter(c=>c.grade>=a&&c.grade<=b);
   let h=`<div class="hdr"><p class="mini" style="color:var(--role-t);margin-top:2px">1–11 sinflar · ${cl.length} sinf · ${active().length} o'quvchi</p></div>`;
-  h+=`<div class="chips">${chip("all","Hammasi")}${chip("g1","1–4")}${chip("g2","5–9")}${chip("g3","10–11")}</div>`;
-  if(!cl.length) h+=`<div class="card">${emptyBox("ti-school","Hali sinf ochilmagan")}</div>${canEdit()?`<div class="btns"><button class="btn" data-act="clsBulk"><i class="ti ti-wand"></i>Sinflarni tez yaratish</button></div><div class="btns" style="margin-top:8px"><button class="btn ghost" data-act="clsNew"><i class="ti ti-plus"></i>Bitta sinf qo'shish</button></div>`:""}`;
+  h+=`<div class="chips">${chip("all","Hammasi")}${chip("g12","1–2")}${chip("g34","3–4")}${chip("g2","5–9")}${chip("g3","10–11")}</div>`;
+  if(!cl.length) h+=`<div class="card">${emptyBox("ti-school","Hali sinf ochilmagan")}</div>${canCls()?`<div class="btns"><button class="btn" data-act="clsBulk"><i class="ti ti-wand"></i>Sinflarni tez yaratish</button></div><div class="btns" style="margin-top:8px"><button class="btn ghost" data-act="clsNew"><i class="ti ti-plus"></i>Bitta sinf qo'shish</button></div>`:""}`;
   else{
     h+=`<div class="cgrid">${l.map(c=>{ const st=activeIn(c.id), r=rahbarOf(c.id), av_=avgScore(st), risk=st.filter(s=>level(score(s))==="bad").length;
       return `<button class="cl" data-go="cls/${c.id}"><div class="h"><b>${esc(c.name)}</b>${st.length?lvTag(av_):tag("—","--line2","--muted")}</div><p class="mini" style="margin-top:4px;${r?"":"color:var(--pk)"}">${r?"Rahbar: "+esc(staffShort(r)):"Rahbar yo'q"}</p><p class="mini">${st.length} o'quvchi${risk?` · <span style="color:var(--pk)">${risk} xavf</span>`:""}</p><div class="bar8" style="margin-top:8px;flex:none;height:6px"><i style="width:${st.length?av_:0}%;background:${lvColor(av_)}"></i></div></button>`; }).join("")}</div>
     <p class="mini" style="text-align:center;margin:10px 14px 0">Burchakdagi foiz va chiziq — sinfning o'rtacha intizomi</p>
-    ${canEdit()?`<div class="btns"><button class="btn" data-act="clsNew"><i class="ti ti-plus"></i>Sinf qo'shish</button></div>`:""}`;
+    ${canCls()?`<div class="btns"><button class="btn" data-act="clsNew"><i class="ti ti-plus"></i>Sinf qo'shish</button></div>`:""}`;
   }
-  return {bar:{t:"Sinflar",back:"home",acts:canEdit()&&cl.length?`<button class="ib" data-act="clsNew" aria-label="Sinf qo'shish"><i class="ti ti-plus"></i></button>`:""},html:h};
+  return {bar:{t:"Sinflar",back:"home",acts:canCls()&&cl.length?`<button class="ib" data-act="clsNew" aria-label="Sinf qo'shish"><i class="ti ti-plus"></i></button>`:""},html:h};
 };
 VIEWS.cls=id=>{
   const c=S.classes[id];
@@ -849,10 +881,10 @@ VIEWS.cls=id=>{
   const rows=[];
   if(r) rows.push(`<button class="row" data-go="st/${r.id}"><span class="ic" style="background:var(--or-s);color:var(--or)"><i class="ti ti-star"></i></span><div class="mid"><b>${esc(r.fio)}</b><small>Sinf rahbari${(r.yuk||[]).filter(y=>(y.cids||[]).includes(id)).map(y=>" · "+esc(y.fan)).join("")}</small></div></button>`);
   tch.filter(x=>x.t.id!==r?.id).forEach(x=>rows.push(`<button class="row" data-go="st/${x.t.id}">${fanBox(x.fan)}<div class="mid"><b>${esc(x.t.fio)}</b><small>${esc(x.fan)}</small></div></button>`));
-  h+=sec("Fan o'qituvchilari",canEdit()?`<button class="a" data-act="assignOpen" data-cid="${id}">+ Biriktirish</button>`:"")+`<div class="card">${rows.join("")||emptyBox("ti-users","Hali o'qituvchi biriktirilmagan")}</div>`;
+  h+=sec("Fan o'qituvchilari",canCls()?`<button class="a" data-act="assignOpen" data-cid="${id}">+ Biriktirish</button>`:"")+`<div class="card">${rows.join("")||emptyBox("ti-users","Hali o'qituvchi biriktirilmagan")}</div>`;
   h+=sec(`O'quvchilar (${st.length})`)+`<div class="card">${st.length?st.map(s=>stuRow(s)).join(""):emptyBox("ti-users","Bu sinfda hali o'quvchi yo'q")}</div>`;
-  if(canEdit()) h+=`<div class="btns"><button class="btn" data-act="stuNew" data-cid="${id}"><i class="ti ti-user-plus"></i>Shu sinfga o'quvchi qo'shish</button></div>`;
-  return {bar:{t:c.name+" sinf",back:"classes",acts:canEdit()?`<button class="ib" data-act="clsEdit" data-cid="${id}" aria-label="Tahrirlash"><i class="ti ti-pencil"></i></button>`:""},html:h};
+  if(canStu()) h+=`<div class="btns"><button class="btn" data-act="stuNew" data-cid="${id}"><i class="ti ti-user-plus"></i>Shu sinfga o'quvchi qo'shish</button></div>`;
+  return {bar:{t:c.name+" sinf",back:"classes",acts:canCls()?`<button class="ib" data-act="clsEdit" data-cid="${id}" aria-label="Tahrirlash"><i class="ti ti-pencil"></i></button>`:""},html:h};
 };
 
 /* ================= STAFF ================= */
@@ -881,7 +913,7 @@ function staffListHtml(){
   l=[...l].sort((a,b)=>String(a.fio).localeCompare(String(b.fio),"uz"));
   if(!l.length) return `<div class="card">${emptyBox("ti-id-badge-2",staffList().length?"Hech kim topilmadi":"Hali xodim qo'shilmagan")}</div>`;
   return `<div class="card">${l.map(t=>{ const rc=rahbarCls(t.id), iss=staffIssue(t), p=isBoss()?pinOfStaff(t.id):null;
-    return `<button class="row" data-go="st/${t.id}">${av({fio:t.fio},t.id)}<div class="mid"><b>${esc(t.fio)}${rc.length?` <span class="tg" style="background:var(--or-s);color:var(--or);margin-left:4px">${rc.map(c=>esc(c.name)).join(", ")} rahbari</span>`:""}</b><small>${staffSub(t)}</small></div>${iss?tag(iss,"--pk-s","--pk"):p?`<span class="mini" style="color:${p.last&&dk(p.last)>=daysAgo(1)?"var(--gr)":"var(--muted)"};white-space:nowrap">${p.last?ago(p.last):"kirmagan"}</span>`:""}</button>`; }).join("")}</div>
+    return `<button class="row" data-go="st/${t.id}">${av({fio:t.fio},t.id)}<div class="mid"><b>${esc(t.fio)}${(t.perms||[]).length?` <span class="tg" style="background:var(--vi-s);color:var(--vi);margin-left:4px">+ huquq</span>`:""}${rc.length?` <span class="tg" style="background:var(--or-s);color:var(--or);margin-left:4px">${rc.map(c=>esc(c.name)).join(", ")} rahbari</span>`:""}</b><small>${staffSub(t)}</small></div>${iss?tag(iss,"--pk-s","--pk"):p?`<span class="mini" style="color:${p.last&&dk(p.last)>=daysAgo(1)?"var(--gr)":"var(--muted)"};white-space:nowrap">${p.last?ago(p.last):"kirmagan"}</span>`:""}</button>`; }).join("")}</div>
     ${isBoss()?`<p class="mini" style="text-align:center;margin:8px 14px 0">O'ngda — oxirgi marta qachon ilovaga kirgan</p>`:""}`;
 }
 VIEWS.st=id=>{
@@ -897,17 +929,22 @@ VIEWS.st=id=>{
   h+=`<p class="mini" style="margin:12px 16px 6px">Shu hafta</p><div class="kp4"><div><b class="num">${cids.length}</b><span>sinf</span></div><div><b class="num">${nStu}</b><span>o'quvchi</span></div><div><b class="num" style="color:var(--gr)">${mine.filter(r=>r.d>0).length}</b><span>rag'bat</span></div><div><b class="num" style="color:var(--pk)">${mine.filter(r=>r.d<0).length}</b><span>hayfsan</span></div></div>`;
   if(t.role!=="komend"&&t.role!=="kuzat"||(t.yuk||[]).length){
     const rows=(t.yuk||[]).flatMap(y=>(y.cids||[]).map(cid=>`<button class="row" data-go="cls/${cid}"><span class="ic" style="background:${css(softOf(fanIc(y.fan)[1]))};color:${css(fanIc(y.fan)[1])};font-size:13px;font-weight:600;width:42px">${esc(clsName(cid))}</span><div class="mid"><b>${esc(y.fan)} · ${activeIn(cid).length} o'quvchi</b><small>${S.classes[cid]?.rahbarId===id?"Sinf rahbari ham":"Fan o'qituvchisi"}</small></div></button>`));
-    h+=sec("Dars yuklamasi",canEdit()&&t.status!=="ketgan"?`<button class="a" data-act="yukEdit" data-tid="${id}">O'zgartirish</button>`:"")+`<div class="card">${rows.join("")||emptyBox("ti-books","Yuklama berilmagan")}</div>`;
+    h+=sec("Dars yuklamasi",canCls()&&t.status!=="ketgan"?`<button class="a" data-act="yukEdit" data-tid="${id}">O'zgartirish</button>`:"")+`<div class="card">${rows.join("")||emptyBox("ti-books","Yuklama berilmagan")}</div>`;
   }
   const li=(k,v)=>`<div class="li"><span>${k}</span><b>${v}</b></div>`;
   h+=sec("Ma'lumot")+`<div class="card">${li("Telefon",t.tel?`<a href="${telHref(t.tel)}" style="color:var(--bl);text-decoration:none">${esc(t.tel)}</a>`:"—")}${li("Lavozim",esc(ROLE[t.role]?.n||"")+(t.lav?" · "+esc(t.lav):""))}${t.role==="oqit"||t.role==="zavuch"?li("Sinf rahbarligi",rc.length?rc.map(c=>esc(c.name)).join(", "):"Yo'q"):""}${li("PIN kod",isBoss()?(p?`<button style="color:var(--or);font-weight:600" data-act="pinOpen" data-pin="${p.pin}">${p.blocked?"Bloklangan":"•••• •• · ko'rish"}</button>`:`<button style="color:var(--pk);font-weight:600" data-act="pinForStaff" data-tid="${id}">Berilmagan · berish</button>`):`<span style="color:var(--or)">Faqat Bosh admin ko'radi</span>`)}</div>`;
+  if(isBoss()&&t.status!=="ketgan"){
+    const pm=t.perms||[];
+    h+=sec("Qo'shimcha huquqlar")+`<p class="mini" style="margin:-4px 16px 8px">Lavozimidan tashqari yana nima qila oladi</p><div class="card">${PERMS.map(([k,i,c,n,s])=>`<button class="row" data-act="permT" data-tid="${id}" data-k="${k}">${icBox(i,c)}<div class="mid"><b>${n}</b><small>${s}</small></div><span class="tgl" aria-pressed="${pm.includes(k)}"></span></button>`).join("")}</div>
+    <div class="note" style="background:var(--or-ss);border:1px solid var(--or-b)"><i class="ti ti-lock" style="color:var(--or)"></i><div>O'quvchini o'chirish, PIN berish va sozlamalar hech kimga berilmaydi — ular faqat sizda (o'chirish direktorda ham).</div></div>`;
+  }
   if(canAddStaff()&&t.status!=="ketgan") h+=`<div class="btns"><button class="btn redo" data-act="stfLeaveAsk" data-tid="${id}"><i class="ti ti-user-off"></i>Ishdan ketdi deb belgilash</button></div>`;
   if(canAddStaff()&&t.status==="ketgan") h+=`<div class="btns"><button class="btn ghost" data-act="stfBack" data-tid="${id}"><i class="ti ti-refresh"></i>Ishga qaytarish</button></div>`;
   return {bar:{t:"Xodim",back:t.status==="ketgan"?"archive":"staff",acts:canAddStaff()&&t.status!=="ketgan"?`<button class="ib" data-act="stfEdit" data-tid="${id}" aria-label="Tahrirlash"><i class="ti ti-pencil"></i></button>`:""},html:h};
 };
 
 /* ================= REQUESTS / NOTIF ================= */
-const reqActionable=r=>r.status==="open"&&(r.type==="ketish"?canDelete():r.type==="pin"?isBoss():r.type==="dup"?canEdit():false);
+const reqActionable=r=>r.status==="open"&&(r.type==="ketish"?canDelete():r.type==="pin"?isBoss():r.type==="dup"?canStu():false);
 const REQ={
   ketish:{i:"ti-user-minus",c:"--pk",t:"O'quvchi ketmoqda"},
   pin:{i:"ti-key",c:"--or",t:"PIN berish so'rovi"},
@@ -1083,8 +1120,8 @@ A.logReload=()=>{ S.logs=null; render(); };
 
 /* ================= STUDENT add / edit ================= */
 const dupMatches=(f,exceptId)=>{ const n=norm((f.fam||"")+" "+(f.ism||"")); if(n.length<5||!f.fam||!f.ism) return []; return stuList().filter(s=>s.id!==exceptId&&s.status!=="ketgan"&&norm(fullName(s))===n); };
-A.stuNew=d=>{ if(!canEdit()) return; if(!clsList().length){ toast("Avval sinf oching"); go("classes"); return; } openSheet("stu",{classId:d.cid||S.ui.scls||clsList()[0].id,qabul:today(),jins:""}); };
-A.stuEdit=d=>{ const s=S.students[d.sid]; if(!s||!canEdit()) return; openSheet("stu",{id:s.id,fam:s.fam||"",ism:s.ism||"",tug:s.tug||"",jins:s.jins||"",classId:s.classId,qabul:s.qabul||"",ota:s.ota||"",tel:s.tel||"",manzil:s.manzil||"",izoh:s.izoh||""}); };
+A.stuNew=d=>{ if(!canStu()) return; if(!clsList().length){ toast("Avval sinf oching"); go("classes"); return; } openSheet("stu",{classId:d.cid||S.ui.scls||clsList()[0].id,qabul:today(),jins:""}); };
+A.stuEdit=d=>{ const s=S.students[d.sid]; if(!s||!canStu()) return; openSheet("stu",{id:s.id,fam:s.fam||"",ism:s.ism||"",tug:s.tug||"",jins:s.jins||"",classId:s.classId,qabul:s.qabul||"",ota:s.ota||"",tel:s.tel||"",manzil:s.manzil||"",izoh:s.izoh||""}); };
 SHEETS.stu=()=>{
   const f=S.f, dups=dupMatches(f,f.id);
   const exact=dups.filter(s=>f.tug&&s.tug===f.tug);
@@ -1228,7 +1265,7 @@ SHEETS.cls=()=>{
   const f=S.f;
   const used=f.rahbarId?"":"";
   return [f.id?"Sinfni tahrirlash":"Yangi sinf",`
-    <div class="f2"><div><p class="lb">Sinf</p>${sel("grade",Array.from({length:11},(_,i)=>[String(i+1),(i+1)+"-sinf"]))}</div><div><p class="lb">Harfi</p>${inp("letter","A",'maxlength="3" autocapitalize="characters"')}</div></div>
+    <div class="f2"><div><p class="lb">Sinf</p>${sel("grade",Array.from({length:11},(_,i)=>[String(i+1),(i+1)+"-sinf"]))}</div><div><p class="lb">Harfi (o'zingiz yozing)</p>${inp("letter","A",'maxlength="12" autocapitalize="characters"')}</div></div>
     <div class="pick">${LETTERS.map(l=>`<button data-act="fset2" data-k="letter" data-v="${l}" aria-pressed="${f.letter===l}">${l}</button>`).join("")}</div>
     <p class="lb">Sinf rahbari</p>${sel("rahbarId",[["","— tayinlanmagan —"],...teacherOpts().map(t=>{ const rc=rahbarCls(t.id).filter(c=>c.id!==f.id); return [t.id,t.fio+(rc.length?` (hozir ${rc.map(c=>c.name).join(", ")})`:"")]; })])}
     ${teacherOpts().length?"":`<p class="mini">Hali o'qituvchi qo'shilmagan. Rahbarni keyin ham tayinlash mumkin.</p>`}
@@ -1249,14 +1286,17 @@ A.clsSave=async()=>{
 };
 A.clsDel=()=>{ const c=S.classes[S.f.id]; if(!c) return; const n=activeIn(c.id).length; if(n){ $("fErr").textContent=`Bu sinfda ${n} o'quvchi bor. Avval ularni boshqa sinfga o'tkazing.`; return; } confirmSheet("Sinfni o'chirish",`<b>${esc(c.name)}</b> sinfi o'chiriladi.`,"clsDelDo","O'chirish","red",{data:{cid:c.id}}); };
 A.clsDelDo=async d=>{ try{ await deleteDoc(doc(db,C.cls,d.cid)); const b=writeBatch(db); let n=0; staffList().forEach(t=>{ if(staffCids(t).includes(d.cid)){ b.update(doc(db,C.stf,t.id),{yuk:(t.yuk||[]).map(y=>({...y,cids:(y.cids||[]).filter(x=>x!==d.cid)}))}); n++; } }); if(n) await b.commit(); logAct("Sinf o'chirildi"); closeSheet(); go("classes"); toast("Sinf o'chirildi"); }catch(e){ failed(e); } };
-A.clsBulk=()=>openSheet("bulk",{grades:[1,2,3,4,5,6,7,8,9,10,11],letters:["A","B"]});
+const parseLetters=t=>[...new Set(String(t||"").split(/[,;\s]+/).map(x=>x.trim().toUpperCase()).filter(Boolean))].slice(0,12);
+A.clsBulk=()=>openSheet("bulk",{grades:[1,2,3,4,5,6,7,8,9,10,11],lt:"A, B"});
 SHEETS.bulk=()=>{
-  const f=S.f, n=f.grades.length*f.letters.length;
+  const f=S.f; f.letters=parseLetters(f.lt); const n=f.grades.length*f.letters.length;
   return ["Sinflarni tez yaratish",`<p class="lb">Qaysi sinflar?</p><div class="pick">${Array.from({length:11},(_,i)=>i+1).map(g=>`<button data-act="bulkT" data-k="grades" data-v="${g}" aria-pressed="${f.grades.includes(g)}">${g}</button>`).join("")}</div>
-    <p class="lb">Qaysi harflar?</p><div class="pick">${LETTERS.map(l=>`<button data-act="bulkT" data-k="letters" data-v="${l}" aria-pressed="${f.letters.includes(l)}">${l}</button>`).join("")}</div>
+    <p class="lb">Sinf harflari — o'zingiz yozing, vergul bilan ajrating</p>${inp("lt","Masalan: A, B, V",'data-live="1" autocomplete="off" autocapitalize="characters"')}
+    <div class="pick">${LETTERS.map(l=>`<button data-act="bulkL" data-v="${l}" aria-pressed="${f.letters.includes(l)}">${l}</button>`).join("")}</div>
     <div class="note" style="margin:0;background:var(--bl-s)"><i class="ti ti-info-circle" style="color:var(--bl)"></i><div>${n} ta sinf ochiladi: ${f.grades.slice(0,3).flatMap(g=>f.letters.map(l=>g+"-"+l)).slice(0,5).join(", ")}${n>5?" …":""}. Bor sinflar takrorlanmaydi. Keraksizini keyin o'chirasiz.</div></div>
     <button class="btn" data-act="bulkDo" ${n?"":"disabled"}><i class="ti ti-wand"></i>${n} ta sinf ochish</button>`];
 };
+A.bulkL=d=>{ const l=parseLetters(S.f.lt); S.f.lt=(l.includes(d.v)?l.filter(x=>x!==d.v):[...l,d.v]).join(", "); renderSheet(); };
 A.bulkT=d=>{ const k=d.k, v=k==="grades"?+d.v:d.v, a=S.f[k]; S.f[k]=a.includes(v)?a.filter(x=>x!==v):[...a,v].sort(); renderSheet(); };
 A.bulkDo=async()=>{ const have=new Set(clsList().map(c=>c.name)), b=writeBatch(db); let n=0; S.f.grades.forEach(g=>S.f.letters.forEach(l=>{ const name=g+"-"+l; if(have.has(name)) return; b.set(doc(collection(db,C.cls)),{grade:g,letter:l,name,rahbarId:"",year:S.cfg.year?.id||"",at:Date.now()}); n++; })); try{ if(n) await b.commit(); logAct(`${n} ta sinf ochildi`); closeSheet(); toast(`${n} ta sinf ochildi`); }catch(e){ failed(e); } };
 A.assignOpen=d=>openSheet("assign",{cid:d.cid,tid:"",fan:""});
@@ -1357,12 +1397,25 @@ SHEETS.pin=()=>{
       <button class="sbtn" style="border:1px solid var(--line)" data-act="pinRegenAsk"><i class="ti ti-refresh" style="color:var(--or);font-size:18px"></i>Yangi PIN</button>
       ${p.pin===S.me.pin?`<span></span>`:`<button class="sbtn" style="border:1px solid var(--line)" data-act="pinBlock"><i class="ti ${p.blocked?"ti-lock-open":"ti-ban"}" style="color:var(--pk);font-size:18px"></i>${p.blocked?"Blokdan chiqarish":"Bloklash"}</button>`}
     </div>
+    <button class="btn ghost" data-act="pinCustom"><i class="ti ti-pencil"></i>PIN'ni o'zim yozaman</button>
     ${p.role==="ota"&&p.pin!==S.me.pin?`<button class="btn redo" data-act="pinDelAsk"><i class="ti ti-trash"></i>PIN kodni o'chirish</button>`:""}
     <button class="btn ghost" data-act="close">Yopish</button>`];
 };
 A.pinRegenAsk=()=>confirmSheet("Yangi PIN","Eski kod ishlamay qoladi. Bu odam yangi kod bilan qayta kirishi kerak bo'ladi.","pinRegen","Yangi PIN berish","",{data:{pin:S.f.pin}});
 A.pinRegen=async d=>{ const p=S.pins.find(x=>x.pin===d.pin); if(!p) return; const np=genPin(); const {pin,...rest}=p; delete rest.last;
   try{ await setDoc(doc(db,C.pins,np),{...rest,at:Date.now()}); await deleteDoc(doc(db,C.pins,pin)); if(pin===S.me.pin){ S.me.pin=np; lsSet(S.me); setDoc(doc(db,C.sess,S.uid),{pin:np,at:Date.now()}).catch(()=>{}); } logAct(`Yangi PIN: ${p.name}`); openSheet("pin",{pin:np,fresh:1}); }catch(e){ failed(e); } };
+A.pinCustom=()=>openSheet("pinCustom",{pin:S.f.pin,nw:""});
+SHEETS.pinCustom=()=>{ const p=S.pins.find(x=>x.pin===S.f.pin); return ["PIN'ni o'zim yozaman",`<p style="font-size:14px">${esc(p?.name||"")} uchun yangi 6 xonali kod</p>${inp("nw","••••••",'inputmode="numeric" maxlength="6" autocomplete="off" style="font-size:22px;letter-spacing:6px;text-align:center"')}<p class="mini">Oddiy kodlardan saqlaning: 111111, 123456 kabi kodlarni boshqalar oson topadi.</p><p class="err" id="fErr"></p><button class="btn" data-act="pinCustomDo"><i class="ti ti-check"></i>Saqlash</button><button class="btn ghost" data-act="pinOpen" data-pin="${S.f.pin}"><i class="ti ti-arrow-left"></i>Orqaga</button>`]; };
+A.pinCustomDo=async()=>{ const np=(S.f.nw||"").trim(), p=S.pins.find(x=>x.pin===S.f.pin); if(!p) return;
+  if(!/^\d{6}$/.test(np)) return $("fErr").textContent="Aynan 6 ta raqam yozing.";
+  if(np===p.pin) return $("fErr").textContent="Bu hozirgi kod.";
+  if(/^(\d)\1{5}$/.test(np)||["123456","654321","012345","123123"].includes(np)) return $("fErr").textContent="Bu kod juda oddiy. Boshqasini yozing.";
+  try{ const ex=await getDocFromServer(doc(db,C.pins,np)).catch(()=>getDoc(doc(db,C.pins,np))); if(ex.exists()||S.pins.some(x=>x.pin===np)) return $("fErr").textContent="Bu kod band. Boshqasini yozing.";
+    const {pin,...rest}=p; delete rest.last; await setDoc(doc(db,C.pins,np),{...rest,at:Date.now()}); await deleteDoc(doc(db,C.pins,pin));
+    if(pin===S.me.pin){ S.me.pin=np; lsSet(S.me); setDoc(doc(db,C.sess,S.uid),{pin:np,at:Date.now()}).catch(()=>{}); }
+    logAct(`PIN o'zgartirildi: ${p.name}`); openSheet("pin",{pin:np,fresh:1}); }catch(e){ failed(e); } };
+A.permT=async d=>{ if(!isBoss()) return; const t=S.staff[d.tid]; if(!t) return; const pm=new Set(t.perms||[]); pm.has(d.k)?pm.delete(d.k):pm.add(d.k); const perms=[...pm];
+  try{ const b=writeBatch(db); b.update(doc(db,C.stf,t.id),{perms}); S.pins.filter(p=>p.staffId===t.id).forEach(p=>b.update(doc(db,C.pins,p.pin),{perms})); await b.commit(); logAct(`Huquq ${pm.has(d.k)?"berildi":"olindi"}: ${t.fio} · ${PERMS.find(x=>x[0]===d.k)?.[3]}`); }catch(e){ failed(e); } };
 A.pinBlock=async()=>{ const p=S.pins.find(x=>x.pin===S.f.pin); if(!p||p.pin===S.me.pin) return; try{ await updateDoc(doc(db,C.pins,p.pin),{blocked:!p.blocked}); logAct(`${p.blocked?"Blokdan chiqarildi":"Bloklandi"}: ${p.name}`); toast(p.blocked?"Blokdan chiqarildi":"Bloklandi"); }catch(e){ failed(e); } };
 A.pinDelAsk=()=>confirmSheet("PIN kodni o'chirish","Bu kod butunlay o'chiriladi.","pinDel","O'chirish","red",{data:{pin:S.f.pin}});
 A.pinDel=async d=>{ try{ await deleteDoc(doc(db,C.pins,d.pin)); logAct("PIN o'chirildi"); closeSheet(); toast("O'chirildi"); }catch(e){ failed(e); } };
@@ -1378,7 +1431,7 @@ A.pinKidDo=async d=>{ const p=S.pins.find(x=>x.pin===S.f.pin); if(!p) return; tr
 A.kidPin=async d=>{ const ex=pinsOfKid(d.sid); if(ex.length) return openSheet("pin",{pin:ex[0].pin}); const s=S.students[d.sid]; if(!s) return;
   const pin=genPin(); try{ await setDoc(doc(db,C.pins,pin),{name:(s.ota||fullName(s)+"ning ota-onasi"),role:"ota",kids:[s.id],at:Date.now()}); logAct(`Ota-ona PIN: ${fullName(s)}`); openSheet("pin",{pin,fresh:1}); }catch(e){ failed(e); } };
 A.pinForStaff=async d=>{ const t=S.staff[d.tid]; if(!t||!isBoss()) return; const ex=pinOfStaff(t.id); if(ex){ if(d.rid) updateDoc(doc(db,C.req,d.rid),{status:"done",doneBy:S.me.name,doneAt:Date.now()}).catch(()=>{}); return openSheet("pin",{pin:ex.pin}); }
-  const pin=genPin(); try{ await setDoc(doc(db,C.pins,pin),{name:t.fio,role:t.role,staffId:t.id,at:Date.now()}); if(d.rid) await updateDoc(doc(db,C.req,d.rid),{status:"done",doneBy:S.me.name,doneAt:Date.now()}); logAct(`PIN berildi: ${t.fio}`); openSheet("pin",{pin,fresh:1}); }catch(e){ failed(e); } };
+  const pin=genPin(); try{ await setDoc(doc(db,C.pins,pin),{name:t.fio,role:t.role,staffId:t.id,perms:t.perms||[],at:Date.now()}); if(d.rid) await updateDoc(doc(db,C.req,d.rid),{status:"done",doneBy:S.me.name,doneAt:Date.now()}); logAct(`PIN berildi: ${t.fio}`); openSheet("pin",{pin,fresh:1}); }catch(e){ failed(e); } };
 A.pinNew=()=>openSheet("pinNew",{kind:"stf",sq:""});
 SHEETS.pinNew=()=>{
   const f=S.f, q=norm(f.sq);
