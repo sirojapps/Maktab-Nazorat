@@ -398,6 +398,19 @@ body.r-oqit,body.r-komend,body.r-ota{--role:#56677d;--role2:#66778c;--role-s:#e6
 .btn.grn{background:var(--gr)}
 .btn.mic{background:var(--role)}
 .vrbtn i{color:var(--role)}
+.jg{display:grid;gap:4px;font-size:11px}
+.jg .x{display:flex;flex-direction:column;align-items:center;justify-content:center;color:var(--muted);font-size:11px;min-height:22px}
+.jg .x.n{font-weight:600;color:var(--ink)}.jg .x small{font-size:9.5px;font-weight:400;color:var(--faint)}
+.jg .c{border-radius:9px;min-height:44px;padding:3px 1px;display:flex;flex-direction:column;align-items:center;justify-content:center;line-height:1.15;overflow:hidden}
+.jg .c b{font-size:11.5px;font-weight:600}.jg .c small{font-size:9.5px;opacity:.85;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.jg .c.e{background:var(--bg);color:var(--faint);border:1px dashed var(--line)}
+.jg .c.off{background:#fff3cf;color:#a86b00;border:1px solid #ffd77a}
+.pk2{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:10px 14px 0}
+.pk2 div{background:#fff;border-radius:14px;padding:10px 12px}.pk2 span{display:block;font-size:11.5px;color:var(--muted)}.pk2 b{display:block;font-size:17px;font-weight:600;margin-top:2px}
+.pt .pr{display:grid;grid-template-columns:minmax(0,1fr) 64px 64px 92px;gap:6px;align-items:center;padding:9px 12px;border-bottom:1px solid var(--line2);width:100%;text-align:left;font-size:13px}
+.pt .pr:last-child{border-bottom:0}.pt .pr.h{font-size:11px;color:var(--faint);padding:8px 12px}.pt .pr>span:not(.nm){text-align:right}
+.pt .nm{min-width:0}.pt .nm b{display:block;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.pt .nm small{font-size:11px;color:var(--muted)}
+@media(min-width:760px){.pk2{grid-template-columns:repeat(4,1fr)}}
 </style>
 </head>
 <body>
@@ -1654,7 +1667,7 @@ const monOf=d=>String(d).slice(0,7);
 const curMon=()=>monOf(today());
 const mons2=()=>[...new Set([monOf(daysAgo(40)),curMon()])];
 const hmNow=()=>hm(Date.now());
-const isSchoolDay=d=>{ const w=new Date(d+"T12:00:00").getDay(); return w!==0; };
+const isSchoolDay=d=>{ const w=new Date(d+"T12:00:00").getDay(); return w!==0&&!((S.jad||{}).off||{})[d]; };
 const uid6=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,6);
 
 /* ================= teacher helpers ================= */
@@ -2753,6 +2766,312 @@ A.resetDo=async()=>{
     show("scrSetup"); toast(`Tozalandi · ${n} ta yozuv o'chirildi`);
   }catch(e){ if(btn){ btn.disabled=false; btn.innerHTML='<i class="ti ti-trash"></i>Hammasini o\'chirish'; } failed(e); }
 };
+
+
+/* ================= DARS JADVALI + OYLIK =================
+   mn_meta/jadval:  {bells:[{s:"08:30",e:"09:15"}…], w:{cid:{"1":[{f,t}|null…] … "6":[…]}}, off:{"YYYY-MM-DD":"Bayram"}}
+   mn_meta/payroll: {rates:{tid:{"cid_fanHash":summa}}, m:{"YYYY-MM":{tid:{cx:{key:{by,why,at,amt}}, paid:{at,by,sum}}}}}
+   Ushlanma: jadvaldagi dars tugaguncha belgilanmagan har o'quvchi uchun (oylik summa / oydagi darslar soni). */
+const JDEF_BELLS=[["08:30","09:15"],["09:25","10:10"],["10:20","11:05"],["11:15","12:00"],["12:10","12:55"],["13:05","13:50"],["14:00","14:45"],["14:55","15:40"]].map(([s,e])=>({s,e}));
+const JWD=["","Du","Se","Ch","Pa","Ju","Sh"], JWDL=["","Dushanba","Seshanba","Chorshanba","Payshanba","Juma","Shanba"];
+const jad=()=>S.jad||{};
+const bells=()=>(jad().bells&&jad().bells.length)?jad().bells:JDEF_BELLS;
+const wdOf=d=>new Date(d+"T12:00:00").getDay();
+const jSlots=(cid,w)=>((jad().w||{})[cid]||{})[w]||[];
+const isOffDay=d=>!!(jad().off||{})[d];
+const monDays=mon=>{ const [y,m]=mon.split("-").map(Number); const n=new Date(y,m,0).getDate(); return Array.from({length:n},(_,i)=>`${mon}-${pad2(i+1)}`); };
+const endTs=(d,e)=>new Date(`${d}T${e}:00`).getTime();
+const canPay=()=>["admin","direktor"].includes(role())||P("oyl");
+const canJad=()=>canCls();
+const rKey=(cid,fan)=>`${cid}_${hashN(fan).toString(36)}`;
+const som=n=>Math.round(+n||0).toLocaleString("ru-RU").replace(/,/g," ");
+const somK=n=>{ n=Math.round(+n||0); const a=Math.abs(n); return a>=1e6?(n/1e6).toFixed(a>=1e7?1:2).replace(/\.?0+$/,"").replace(".",",")+"m":a>=1e3?Math.round(n/1e3)+"k":String(n); };
+const monName=mon=>{ const [y,m]=mon.split("-"); return `${MONTHS[+m-1][0].toUpperCase()+MONTHS[+m-1].slice(1)} ${y}`; };
+PERMS.push(["oyl","ti-cash","--gr","Oylik va moliya","Fond, barcha oyliklar, ushlanmalar. Masalan: Bosh hisobchi"]);
+
+/* slots of one teacher on one date */
+function tSlotsOn(tid,d){
+  if(!isSchoolDay(d)) return [];
+  const w=wdOf(d), b=bells(), out=[];
+  Object.keys(jad().w||{}).forEach(cid=>{ if(!S.classes[cid]) return; jSlots(cid,w).forEach((x,i)=>{ if(x&&x.t===tid&&b[i]) out.push({d,cid,i,f:x.f,s:b[i].s,e:b[i].e}); }); });
+  return out.sort((a,b2)=>a.i-b2.i);
+}
+const tSlotsMon=(tid,mon)=>monDays(mon).flatMap(d=>tSlotsOn(tid,d));
+/* which attendance lesson belongs to a slot */
+function slotLesson(x,tid,used){
+  const ls=lessonsOf(x.cid,x.d).filter(l=>l.fan===x.f&&!used.has(l.lid));
+  const l=ls.find(l=>l.sl===x.i)||ls.find(l=>l.sl==null&&l.tid===tid);
+  if(l) used.add(l.lid);
+  return l||null;
+}
+const stuOnDay=(cid,d)=>stuList().filter(s=>s.classId===cid&&(!s.qabul||s.qabul<=d)&&(s.status!=="ketgan"||(s.ketganDate&&s.ketganDate>d)));
+const lateMark=(l,sid,et)=>{ const mt=(l.mt&&l.mt[sid])||l.sv||l.at||0; return mt>et; };
+
+function payCalc(tid,mon){
+  const t=S.staff[tid]; if(!t) return null;
+  const pr=S.pay||{}, rates=(pr.rates||{})[tid]||{}, mp=((pr.m||{})[mon]||{})[tid]||{}, cx=mp.cx||{};
+  const days=monDays(mon), D=days.length, m0=days[0], m1=days[D-1], now=Date.now(), td=today();
+  const slots=tSlotsMon(tid,mon);
+  const gm={};
+  const addG=(cid,fan)=>{ const k=rKey(cid,fan); if(!gm[k]&&S.classes[cid]) gm[k]={k,cid,fan,rate:+rates[k]||0,acc:0,n:0,N:0}; return gm[k]; };
+  (t.yuk||[]).forEach(y=>(y.cids||[]).forEach(cid=>addG(cid,y.fan)));
+  slots.forEach(x=>{ const g=addG(x.cid,x.f); if(g) g.N++; });
+  Object.values(gm).forEach(g=>{
+    stuList().filter(s=>s.classId===g.cid).forEach(s=>{
+      const a=s.qabul&&s.qabul>m0?s.qabul:m0;
+      let b=s.status==="ketgan"?(s.ketganDate?daysBefore(s.ketganDate):null):m1; if(!b) return; if(b>m1) b=m1;
+      if(a>b) return;
+      const cnt=Math.round((new Date(b+"T12:00:00")-new Date(a+"T12:00:00"))/864e5)+1;
+      g.acc+=g.rate*cnt/D; g.n+=cnt/D;
+    });
+    g.acc=Math.round(g.acc); g.share=g.N?g.rate/g.N:0;
+  });
+  const used=new Set(), ded=[];
+  slots.forEach(x=>{
+    const from=jad().from; if(!from||x.d<from||x.d>td) return; const et=endTs(x.d,x.e); if(x.d===td&&now<et) return;
+    const g=gm[rKey(x.cid,x.f)]; if(!g||!g.rate) return;
+    const l=slotLesson(x,tid,used), exp=stuOnDay(x.cid,x.d);
+    const um=exp.filter(s=>!l||!(l.m||{})[s.id]||lateMark(l,s.id,et));
+    if(!um.length) return;
+    const key=`${x.d}_${x.cid}_${x.i}`;
+    ded.push({key,d:x.d,cid:x.cid,fan:x.f,i:x.i,n:um.length,tot:exp.length,amt:Math.round(um.length*g.share),open:!l,late:!!l&&um.every(s=>(l.m||{})[s.id]),cx:cx[key]||null});
+  });
+  ded.sort((a,b)=>b.d.localeCompare(a.d)||b.i-a.i);
+  const groups=Object.values(gm).sort((a,b)=>clsSort(S.classes[a.cid],S.classes[b.cid])||a.fan.localeCompare(b.fan));
+  const hisob=groups.reduce((a,g)=>a+g.acc,0), ush=ded.filter(x=>!x.cx).reduce((a,x)=>a+x.amt,0), cxs=ded.filter(x=>x.cx).reduce((a,x)=>a+x.amt,0);
+  return {t,tid,mon,groups,ded,hisob,ush,cxs,ber:hisob-ush,paid:mp.paid||null,noRate:groups.some(g=>!g.rate)};
+}
+const daysBefore=d=>dk(new Date(d+"T12:00:00").getTime()-864e5);
+const payStaff=()=>staffActive().filter(t=>(t.yuk||[]).length||Object.keys(((S.pay||{}).rates||{})[t.id]||{}).length).sort((a,b)=>String(a.fio).localeCompare(String(b.fio),"uz"));
+
+/* today's lessons of a teacher with status */
+function todaySlots(tid){
+  const d=today(), now=Date.now(), used=new Set();
+  return tSlotsOn(tid,d).map(x=>{ const l=slotLesson(x,tid,used), exp=stuOnDay(x.cid,d), et=endTs(d,x.e), st0=endTs(d,x.s);
+    const marked=l?exp.filter(s=>(l.m||{})[s.id]&&!lateMark(l,s.id,et)).length:0;
+    const st=marked>=exp.length&&exp.length?"ok":now>et?"bad":now>=st0-5*60e3?"now":"later";
+    return {...x,l,n:exp.length,marked,st,left:Math.round((et-now)/60e3)}; });
+}
+
+/* ---------- writes ---------- */
+function nest(path,val){ const ks=path.split("."), o={}; let c=o; ks.forEach((k,i)=>{ if(i===ks.length-1) c[k]=val; else c=c[k]={}; }); return o; }
+async function metaUpd(docName,path,val){
+  const ref=doc(db,C.meta,docName);
+  try{ await updateDoc(ref,{[path]:val}); }
+  catch(e){ if(val&&val._methodName==="deleteField") return; await setDoc(ref,nest(path,val),{merge:true}); }
+}
+
+/* ---------- live data ---------- */
+const _enterApp1=enterApp;
+enterApp=function(){
+  S.jad=S.jad||null; S.pay=S.pay||null;
+  _enterApp1();
+  const sub=(ref,fn)=>unsub.push(onSnapshot(ref,fn,e=>console.warn(e)));
+  if(role()!=="ota"){
+    sub(doc(db,C.meta,"jadval"),d=>{ S.jad=d.exists()?d.data():{}; later(); });
+    if(canPay()||role()==="oqit"||isTeacher()) sub(doc(db,C.meta,"payroll"),d=>{ S.pay=d.exists()?d.data():{}; later(); });
+  }
+};
+ALLOW.rah.push("jadval","oylik","oyl"); ALLOW.oqit.push("oyl","tjad");
+Object.assign(SECTION,{jadval:"home",oylik:"home",oyl:"home",tjad:"home"});
+
+/* ================= JADVAL view ================= */
+VIEWS.jadval=(cid0)=>{
+  const cl=clsList(); const cid=cid0&&S.classes[cid0]?cid0:(S.ui.jcls&&S.classes[S.ui.jcls]?S.ui.jcls:cl[0]?.id);
+  if(!cid) return {bar:{t:"Dars jadvali",back:"home"},html:`<div class="card" style="margin-top:12px">${emptyBox("ti-calendar","Avval sinflarni oching")}</div>`};
+  S.ui.jcls=cid;
+  const b=bells(), ed=canJad();
+  let h=`<div class="chips" style="margin-top:12px">${cl.map(c=>`<button class="chip" data-act="ui" data-k="jcls" data-v="${c.id}" aria-pressed="${c.id===cid}">${esc(c.name)}</button>`).join("")}</div>`;
+  h+=`<div class="card cpad"><div class="jg" style="grid-template-columns:30px repeat(6,minmax(0,1fr))"><span class="x"></span>${JWD.slice(1).map(w=>`<span class="x">${w}</span>`).join("")}`;
+  b.forEach((bl,i)=>{
+    h+=`<span class="x n">${i+1}<small>${esc(bl.s)}</small></span>`;
+    for(let w=1;w<=6;w++){ const x=jSlots(cid,w)[i]; const t=x&&S.staff[x.t];
+      h+=x?`<button class="c" ${ed?`data-act="jCell" data-cid="${cid}" data-w="${w}" data-i="${i}"`:""} style="background:${css(softOf(fanIc(x.f)[1]))};color:${css(fanIc(x.f)[1])}"><b>${esc(String(x.f).slice(0,4))}</b><small>${esc(t?shortT(t).split(" ")[0]:"—")}</small></button>`
+        :`<button class="c e" ${ed?`data-act="jCell" data-cid="${cid}" data-w="${w}" data-i="${i}"`:""}>${ed?"+":""}</button>`; }
+  });
+  h+=`</div><p class="mini" style="margin-top:10px">${ed?"Katakni bosing → fan va o'qituvchi. ":""}Bo'sh katak = dars yo'q, hech narsa ushlanmaydi.</p></div>`;
+  if(ed) h+=`<div class="btn2" style="margin:10px 14px 0"><button class="sbtn" style="background:#fff" data-act="jBells"><i class="ti ti-bell" style="color:var(--bl)"></i>Qo'ng'iroq vaqtlari</button><button class="sbtn" style="background:#fff" data-act="jCopyAsk" data-cid="${cid}"><i class="ti ti-copy" style="color:var(--gr)"></i>Boshqa sinfdan nusxa</button></div>`;
+  /* teachers of this class with lesson counts */
+  const cnt={}; for(let w=1;w<=6;w++) jSlots(cid,w).forEach(x=>{ if(x){ const k=x.t+"|"+x.f; cnt[k]=(cnt[k]||0)+1; } });
+  const rows=Object.entries(cnt).map(([k,n])=>{ const [t,f]=k.split("|"); return `<div class="row" style="min-height:46px">${fanBox(f)}<div class="mid"><b>${esc(f)}</b><small>${esc(S.staff[t]?.fio||"—")}</small></div><span class="tg" style="background:var(--bg);color:var(--muted)">haftada ${n}</span></div>`; });
+  if(rows.length) h+=sec("Bu sinfda haftasiga")+`<div class="card">${rows.join("")}</div>`;
+  h+=`<div class="note" style="background:#fff;border:1px solid var(--line)"><i class="ti ti-cash" style="color:var(--gr)"></i><div style="flex:1">${jad().from?`Oylikdan ushlash <b>${dTxt(jad().from)}</b> dan boshlab hisoblanadi`:"Jadval kiritilgan kundan boshlab ushlanma hisoblanadi"}</div>${ed&&jad().from?'<button class="tg" style="background:var(--bg);color:var(--bl);align-self:center" data-act="jFrom">O\'zgartirish</button>':""}</div>`;
+  h+=calHtml(ed);
+  return {bar:{t:"Dars jadvali",s:clsName(cid)+" sinf",back:"home"},html:h};
+};
+function calHtml(ed){
+  const mon=S.ui.jmon||curMon(), days=monDays(mon), off=jad().off||{}, first=wdOf(days[0]);
+  const ms=[monOf(daysAgo(25)),curMon(),monOf(dk(Date.now()+28*864e5))].filter((v,i,a)=>a.indexOf(v)===i);
+  let h=sec("Dam olish kunlari",`<span class="mini">${ed?"Kunni bosing":""}</span>`)+`<div class="chips" style="margin-top:0">${ms.map(m=>`<button class="chip" data-act="ui" data-k="jmon" data-v="${m}" aria-pressed="${m===mon}">${monName(m)}</button>`).join("")}</div>`;
+  h+=`<div class="card cpad"><div class="jg" style="grid-template-columns:repeat(7,minmax(0,1fr))">${["Du","Se","Ch","Pa","Ju","Sh","Ya"].map(x=>`<span class="x">${x}</span>`).join("")}${'<span class="x"></span>'.repeat((first+6)%7)}`;
+  days.forEach(d=>{ const w=wdOf(d), o=off[d];
+    h+=w===0?`<span class="x">${+d.slice(8)}</span>`:`<button class="c ${o?"off":"e"}" ${ed?`data-act="jOff" data-d="${d}"`:""} ${d===today()?'style="outline:2px solid var(--bl)"':""}><b>${+d.slice(8)}</b></button>`; });
+  h+=`</div>`;
+  const list=Object.entries(off).filter(([d])=>monOf(d)===mon).sort();
+  h+=list.length?`<div style="margin-top:10px">${list.map(([d,n])=>`<p class="mini"><b style="color:var(--or)">${dShort(d)}</b> · ${esc(n)}</p>`).join("")}</div>`:`<p class="mini" style="margin-top:10px">Bu oyda belgilangan dam kuni yo'q. Yakshanba har doim dam.</p>`;
+  return h+`<p class="mini" style="margin-top:6px">Sariq kun = butun maktab dam (bayram yoki javob). O'sha kuni hech kimdan ushlanmaydi.</p></div>`;
+}
+A.jCell=d=>{ const x=jSlots(d.cid,d.w)[+d.i]; openSheet("jcell",{cid:d.cid,w:d.w,i:+d.i,fan:x?.f||"",tid:x?.t||""}); };
+SHEETS.jcell=()=>{
+  const f=S.f, c=S.classes[f.cid], b=bells()[f.i];
+  const tf=teachersOf(f.cid); const fans=[...new Set([...tf.map(x=>x.fan),...fanlar()])];
+  if(!f.fan&&tf[0]) { f.fan=tf[0].fan; }
+  const tl=tf.filter(x=>x.fan===f.fan).map(x=>x.t); const others=staffActive().filter(t=>!tl.includes(t)&&(t.yuk||[]).some(y=>y.fan===f.fan));
+  if(f.fan&&!f.tid&&tl[0]) f.tid=tl[0].id;
+  return [`${esc(c?.name||"")} · ${JWDL[f.w]} · ${f.i+1}-dars`,`<p class="mini">${esc(b?.s||"")}–${esc(b?.e||"")}</p>
+    <p class="lb">Fan</p><div class="pick">${fans.map(x=>`<button data-act="fset2" data-k="fan" data-v="${esc(x)}" aria-pressed="${f.fan===x}">${esc(x)}</button>`).join("")}</div>
+    ${f.fan?`<p class="lb">O'qituvchi</p><div class="pick">${[...tl,...others].map(t=>`<button data-act="fset2" data-k="tid" data-v="${t.id}" aria-pressed="${f.tid===t.id}">${esc(shortT(t))}${tl.includes(t)?"":" ·"}</button>`).join("")||'<span class="mini">Bu fanga o\'qituvchi biriktirilmagan. Xodim sahifasida dars yuklamasini bering.</span>'}</div>`:""}
+    <p class="err" id="fErr"></p>
+    <div class="btn2"><button class="btn ghost" data-act="jCellDel">Bo'sh qilish</button><button class="btn" data-act="jCellSave"><i class="ti ti-check"></i>Saqlash</button></div>`];
+};
+async function jSetCell(cid,w,i,val){
+  const arr=[...jSlots(cid,w)]; while(arr.length<=i) arr.push(null); arr[i]=val; while(arr.length&&!arr[arr.length-1]) arr.pop();
+  if(!jad().from){ await metaUpd("jadval","from",today()); S.jad={...(S.jad||{}),from:today()}; }
+  S.jad=S.jad||{}; S.jad.w=S.jad.w||{}; S.jad.w[cid]={...(S.jad.w[cid]||{}),[w]:arr};
+  await metaUpd("jadval",`w.${cid}.${w}`,arr);
+}
+A.jCellSave=async()=>{ const f=S.f; if(!f.fan) return $("fErr").textContent="Fanni tanlang."; if(!f.tid) return $("fErr").textContent="O'qituvchini tanlang.";
+  try{ await jSetCell(f.cid,f.w,f.i,{f:f.fan,t:f.tid}); closeSheet(); render(); }catch(e){ failed(e); } };
+A.jCellDel=async()=>{ const f=S.f; try{ await jSetCell(f.cid,f.w,f.i,null); closeSheet(); render(); }catch(e){ failed(e); } };
+A.jBells=()=>{ const b=bells(); const o={n:String(b.length)}; b.forEach((x,i)=>{ o["s"+i]=x.s; o["e"+i]=x.e; }); openSheet("jbells",o); };
+SHEETS.jbells=()=>{ const n=clamp(+S.f.n||8,1,10);
+  let rows=""; for(let i=0;i<n;i++) rows+=`<div style="display:flex;gap:8px;align-items:center"><span class="mini" style="width:46px">${i+1}-dars</span><input class="inp" type="time" data-k="s${i}" value="${esc(S.f["s"+i]||"")}"><span class="mini">–</span><input class="inp" type="time" data-k="e${i}" value="${esc(S.f["e"+i]||"")}"></div>`;
+  return ["Qo'ng'iroq vaqtlari",`<p class="mini">Hamma sinf uchun bir xil. Dars tugash vaqtigacha yo'qlama qilinmasa, ushlanadi.</p>
+    <p class="lb">Kuniga necha dars</p><div class="pick">${[4,5,6,7,8,9,10].map(k=>`<button data-act="fset2" data-k="n" data-v="${k}" aria-pressed="${n===k}">${k}</button>`).join("")}</div>
+    <div style="display:flex;flex-direction:column;gap:8px;margin-top:6px">${rows}</div><p class="err" id="fErr"></p><button class="btn" data-act="jBellsSave"><i class="ti ti-check"></i>Saqlash</button>`]; };
+A.jBellsSave=async()=>{ const n=clamp(+S.f.n||8,1,10), out=[];
+  for(let i=0;i<n;i++){ const s=S.f["s"+i], e=S.f["e"+i]; if(!/^\d\d:\d\d$/.test(s||"")||!/^\d\d:\d\d$/.test(e||"")||e<=s) return $("fErr").textContent=`${i+1}-dars vaqtini to'g'ri yozing.`; if(i&&s<out[i-1].e) return $("fErr").textContent=`${i+1}-dars oldingisi tugamasdan boshlanyapti.`; out.push({s,e}); }
+  try{ await metaUpd("jadval","bells",out); S.jad={...(S.jad||{}),bells:out}; closeSheet(); toast("Saqlandi"); render(); }catch(e){ failed(e); } };
+A.jCopyAsk=d=>openSheet("jcopy",{cid:d.cid,from:""});
+SHEETS.jcopy=()=>{ const f=S.f, src=clsList().filter(c=>c.id!==f.cid&&[1,2,3,4,5,6].some(w=>jSlots(c.id,w).some(Boolean)));
+  return [`${esc(clsName(f.cid))} uchun nusxa`,`<p class="mini">Tanlangan sinf jadvali shu sinfga ko'chadi. O'qituvchilarni keyin almashtirasiz.</p><div class="pick">${src.map(c=>`<button data-act="fset2" data-k="from" data-v="${c.id}" aria-pressed="${f.from===c.id}">${esc(c.name)}</button>`).join("")||'<span class="mini">Hali hech bir sinfda jadval yo\'q</span>'}</div><p class="err" id="fErr"></p><button class="btn" data-act="jCopyDo"><i class="ti ti-copy"></i>Nusxa olish</button>`]; };
+A.jCopyDo=async()=>{ const f=S.f; if(!f.from) return $("fErr").textContent="Sinfni tanlang."; const w=((jad().w||{})[f.from])||{};
+  try{ await metaUpd("jadval",`w.${f.cid}`,JSON.parse(JSON.stringify(w))); S.jad.w[f.cid]=JSON.parse(JSON.stringify(w)); closeSheet(); toast("Nusxa olindi"); render(); }catch(e){ failed(e); } };
+A.jOff=d=>{ const o=(jad().off||{})[d.d]; openSheet("joff",{d:d.d,n:o||"",on:!!o}); };
+SHEETS.joff=()=>{ const f=S.f; return [`${dShort(f.d)} · ${WDAYS[wdOf(f.d)]}`,`<p class="mini">Butun maktab dam bo'lsa belgilang. O'sha kuni hech kimdan oylik ushlanmaydi.</p>
+  <p class="lb">Sabab</p><div class="pick">${["Bayram","Javob berildi","Ta'til"].map(x=>`<button data-act="fset2" data-k="n" data-v="${x}" aria-pressed="${f.n===x}">${x}</button>`).join("")}</div>${inp("n","Masalan: Mustaqillik kuni")}
+  <p class="err" id="fErr"></p><div class="btn2">${f.on?'<button class="btn ghost" data-act="jOffDel">Dars kuni qilish</button>':""}<button class="btn" data-act="jOffSave"><i class="ti ti-check"></i>Dam kuni</button></div>`]; };
+A.jOffSave=async()=>{ const f=S.f, n=String(f.n||"").trim()||"Dam olish"; try{ await metaUpd("jadval",`off.${f.d}`,n); S.jad={...(S.jad||{}),off:{...(jad().off||{}),[f.d]:n}}; closeSheet(); render(); }catch(e){ failed(e); } };
+A.jOffDel=async()=>{ const f=S.f; try{ await updateDoc(doc(db,C.meta,"jadval"),{[`off.${f.d}`]:deleteField()}); const o={...(jad().off||{})}; delete o[f.d]; S.jad={...(S.jad||{}),off:o}; closeSheet(); render(); }catch(e){ failed(e); } };
+
+/* teacher: my weekly schedule */
+VIEWS.tjad=()=>{
+  const tid=S.me.staffId, b=bells(); let h="";
+  for(let w=1;w<=6;w++){ const rows=[]; Object.keys(jad().w||{}).forEach(cid=>{ if(!S.classes[cid]) return; jSlots(cid,w).forEach((x,i)=>{ if(x&&x.t===tid&&b[i]) rows.push({cid,i,f:x.f}); }); });
+    rows.sort((a,c)=>a.i-c.i);
+    h+=sec(JWDL[w]+(w===wdOf(today())?" · bugun":""))+`<div class="card">${rows.map(r=>`<div class="row" style="min-height:46px"><span class="ic" style="background:var(--bg);color:var(--muted);font-size:12px;font-weight:600;width:34px">${r.i+1}</span><div class="mid"><b>${esc(clsName(r.cid))} · ${esc(r.f)}</b><small>${esc(b[r.i].s)}–${esc(b[r.i].e)}</small></div></div>`).join("")||'<p class="mini" style="padding:12px">Dars yo\'q</p>'}</div>`; }
+  return {bar:{t:"Mening jadvalim",back:"home"},html:h};
+};
+
+/* ================= OYLIK views ================= */
+const payMons=()=>mons2().slice().reverse();
+VIEWS.oylik=()=>{
+  if(!canPay()) return {bar:{t:"Oyliklar",back:"home"},html:`<div class="card" style="margin-top:12px">${emptyBox("ti-lock","Bu bo'lim faqat CEO, Direktor va Bosh hisobchi uchun")}</div>`};
+  const mon=S.ui.pmon&&mons2().includes(S.ui.pmon)?S.ui.pmon:curMon();
+  const L=payStaff().map(t=>payCalc(t.id,mon)).filter(Boolean);
+  const fond=L.reduce((a,x)=>a+x.hisob,0), ush=L.reduce((a,x)=>a+x.ush,0), ber=fond-ush, paid=L.filter(x=>x.paid).length;
+  const unm=mon===curMon()?L.reduce((a,x)=>a+x.ded.filter(z=>z.d===today()&&!z.cx).length,0):0;
+  let h=`<div class="chips" style="margin-top:12px">${payMons().map(m=>`<button class="chip" data-act="ui" data-k="pmon" data-v="${m}" aria-pressed="${m===mon}">${monName(m)}</button>`).join("")}</div>`;
+  h+=`<div class="pk2"><div><span>Jami fond</span><b class="num">${som(fond)}</b></div><div><span>Ushlangan</span><b class="num" style="color:var(--pk)">${ush?"−"+som(ush):"0"}</b></div><div><span>Beriladi</span><b class="num" style="color:var(--gr)">${som(ber)}</b></div><div><span>To'landi</span><b class="num">${paid} / ${L.length}</b></div></div>`;
+  if(unm) h+=`<div class="note" style="background:var(--or-ss);border:1px solid var(--or-b)"><i class="ti ti-alert-triangle" style="color:var(--or)"></i><div style="flex:1">Bugun ${unm} ta darsda yo'qlama o'z vaqtida qilinmadi</div></div>`;
+  if(L.some(x=>x.noRate)) h+=`<div class="note" style="background:var(--bl-ss);border:1px solid var(--bl-s)"><i class="ti ti-info-circle" style="color:var(--bl)"></i><div>${L.filter(x=>x.noRate).length} ta o'qituvchida o'quvchi uchun summa kiritilmagan. Ismini bosib kiriting.</div></div>`;
+  if(!Object.keys(jad().w||{}).length) h+=`<button class="note" style="background:var(--or-ss);border:1px solid var(--or-b);width:calc(100% - 28px);text-align:left" data-go="jadval"><i class="ti ti-calendar" style="color:var(--or)"></i><div style="flex:1"><b>Dars jadvali kiritilmagan</b>Jadvalsiz ushlanmalar hisoblanmaydi. Jadvalni kiritish →</div></button>`;
+  h+=`<div class="card pt" style="margin-top:12px"><div class="pr h"><span>O'qituvchi</span><span>Hisob</span><span>Ushlan.</span><span>Beriladi</span></div>${L.map(x=>`<button class="pr" data-go="oyl/${x.tid}/${mon}"><span class="nm"><b>${esc(shortT(x.t))}</b><small>${x.groups.length} guruh · ${Math.round(x.groups.reduce((a,g)=>a+g.n,0))} o'q.${x.paid?' · <i class="ti ti-check" style="color:var(--gr)"></i>':""}</small></span><span class="num">${somK(x.hisob)}</span><span class="num" style="color:${x.ush?"var(--pk)":"var(--faint)"}">${x.ush?"−"+somK(x.ush):"0"}</span><span class="num" style="color:var(--gr);font-weight:600">${som(x.ber)}</span></button>`).join("")||emptyBox("ti-users","Dars yuklamasi bor o'qituvchi yo'q")}</div>`;
+  h+=`<div class="btn2" style="margin:12px 14px 0"><button class="sbtn" style="background:#fff" data-act="payCsv" data-mon="${mon}"><i class="ti ti-download" style="color:var(--gr)"></i>Excel</button><button class="sbtn" style="background:#fff" data-go="jadval"><i class="ti ti-calendar" style="color:var(--bl)"></i>Dars jadvali</button></div>`;
+  h+=`<p class="mini" style="margin:10px 16px 0">Hisob = guruhdagi o'quvchilar × o'quvchi uchun summa (oy o'rtasida kelgan-ketganlar kunlari bo'yicha). Ushlanma = jadvaldagi dars tugaguncha belgilanmagan har o'quvchi uchun bir dars ulushi.</p>`;
+  return {bar:{t:"Oyliklar",s:monName(mon),back:"home"},html:h};
+};
+VIEWS.oyl=(tid0,mon0)=>{
+  const tid=role()==="oqit"||!canPay()?S.me.staffId:tid0;
+  const mon=mon0&&mons2().includes(mon0)?mon0:(S.ui.pmon&&mons2().includes(S.ui.pmon)?S.ui.pmon:curMon());
+  const x=payCalc(tid,mon), own=tid===S.me.staffId, ed=canPay()&&!S.preview;
+  if(!x) return {bar:{t:"Oylik",back:"home"},html:`<div class="card" style="margin-top:12px">${emptyBox("ti-cash","Ma'lumot topilmadi")}</div>`};
+  let h=`<div class="chips" style="margin-top:12px">${payMons().map(m=>`<button class="chip" data-go="oyl/${tid}/${m}" aria-pressed="${m===mon}">${monName(m)}</button>`).join("")}</div>`;
+  h+=`<div class="pk2"><div><span>Hisoblangan</span><b class="num">${som(x.hisob)}</b></div><div><span>Ushlangan</span><b class="num" style="color:var(--pk)">${x.ush?"−"+som(x.ush):"0"}</b></div><div><span>Bekor qilingan</span><b class="num">${x.cxs?"+"+som(x.cxs):"0"}</b></div><div><span>Beriladi</span><b class="num" style="color:var(--gr)">${som(x.ber)}</b></div></div>`;
+  if(x.paid) h+=`<div class="note" style="background:var(--gr-ss);border:1px solid var(--gr-s)"><i class="ti ti-circle-check" style="color:var(--gr)"></i><div><b>To'landi</b> ${som(x.paid.sum)} so'm · ${dTxt(dk(x.paid.at))} · ${esc(x.paid.by)}</div></div>`;
+  h+=sec("Guruhlar",ed?'<span class="mini">Summani bosib o\'zgartiring</span>':"")+`<div class="card">${x.groups.map(g=>`<div class="row" style="min-height:52px">${fanBox(g.fan)}<div class="mid"><b>${esc(clsName(g.cid))} · ${esc(g.fan)}</b><small>${fmt1(g.n)} o'q. × ${g.rate?som(g.rate):"<span style='color:var(--pk)'>summa yo'q</span>"}${g.N?` · ${g.N} dars · 1 dars ${som(g.share)}`:" · jadvalda yo'q"}</small></div>${ed?`<button class="tg num" style="background:var(--bg);color:var(--ink);padding:7px 10px;font-size:13px" data-act="payRate" data-tid="${tid}" data-k="${g.k}" data-cid="${g.cid}" data-fan="${esc(g.fan)}" data-v="${g.rate}">${g.rate?som(g.acc):"Kiritish"}</button>`:`<b class="num" style="font-weight:600">${som(g.acc)}</b>`}</div>`).join("")||emptyBox("ti-books","Dars yuklamasi yo'q")}</div>`;
+  h+=sec(`Ushlanmalar · ${x.ded.length}`)+`<div class="card">${x.ded.map(z=>`<div class="row" style="min-height:52px;${z.cx?"opacity:.6":""}"><div class="mid"><b>${dShort(z.d)} · ${esc(clsName(z.cid))}, ${z.i+1}-dars</b><small>${z.cx?`Bekor: "${esc(z.cx.why)}" — ${esc(z.cx.by)}`:`${esc(z.fan)} · ${z.open?"yo'qlama ochilmagan":z.late?"kech belgilangan":`${z.n} o'quvchi belgilanmagan`} · ${z.n} × ${som(z.amt/z.n)}`}</small></div>${z.cx?`<span class="tg" style="background:var(--gr-s);color:var(--gr)">bekor</span>${ed?`<button class="ib" style="width:32px;height:32px;font-size:16px;color:var(--faint)" data-act="payUncx" data-tid="${tid}" data-mon="${mon}" data-key="${z.key}" aria-label="Qaytarish"><i class="ti ti-arrow-back-up"></i></button>`:""}`:`<span class="tg num" style="background:var(--pk-s);color:var(--pk)">−${som(z.amt)}</span>${ed?`<button class="ib" style="width:32px;height:32px;font-size:16px;color:var(--faint)" data-act="payCx" data-tid="${tid}" data-mon="${mon}" data-key="${z.key}" data-amt="${z.amt}" aria-label="Bekor qilish"><i class="ti ti-x"></i></button>`:""}`}</div>`).join("")||emptyBox("ti-mood-smile","Ushlanma yo'q")}</div>`;
+  if(own&&!ed) h+=`<p class="mini" style="margin:10px 16px 0">Har bir darsda yo'qlamani dars tugaguncha qiling. Belgilanmagan har o'quvchi uchun bir dars ulushi ushlanadi.</p>`;
+  if(ed) h+=`<div class="btns">${x.paid?`<button class="btn ghost" data-act="payPaid" data-tid="${tid}" data-mon="${mon}" data-v="0"><i class="ti ti-arrow-back-up"></i>To'landi belgisini olish</button>`:`<button class="btn grn" data-act="payPaid" data-tid="${tid}" data-mon="${mon}" data-v="1"><i class="ti ti-check"></i>${som(x.ber)} so'm to'landi</button>`}</div>`;
+  return {bar:{t:own&&!ed?"Mening oyligim":x.t.fio,s:monName(mon),back:canPay()?"oylik":"home"},html:h};
+};
+A.payRate=d=>openSheet("prate",{tid:d.tid,k:d.k,cid:d.cid,fan:d.fan,v:d.v&&d.v!=="0"?d.v:"",all:""});
+SHEETS.prate=()=>{ const f=S.f; return [`${esc(clsName(f.cid))} · ${esc(f.fan)}`,`<p class="mini">${esc(S.staff[f.tid]?.fio||"")} bir o'quvchi uchun oyiga qancha oladi</p><p class="lb">Summa, so'm</p>${inp("v","50000",'type="number" inputmode="numeric" min="0"')}
+  <button class="row" style="padding:8px 0;border:0;min-height:44px" data-act="fset2" data-k="all" data-v="${f.all?"":"1"}"><div class="mid"><b>Barcha guruhlariga shu summa</b><small>Bu o'qituvchining hamma sinf va fanlari</small></div><span class="tgl" aria-pressed="${!!f.all}"></span></button>
+  <p class="err" id="fErr"></p><button class="btn" data-act="payRateSave"><i class="ti ti-check"></i>Saqlash</button>`]; };
+A.payRateSave=async()=>{ const f=S.f, v=Math.round(+f.v||0); if(!(v>0)) return $("fErr").textContent="Summani yozing.";
+  const x=payCalc(f.tid,curMon()); const keys=f.all?x.groups.map(g=>g.k):[f.k];
+  try{ const cur={...(((S.pay||{}).rates||{})[f.tid]||{})}; keys.forEach(k=>cur[k]=v); await metaUpd("payroll",`rates.${f.tid}`,cur);
+    S.pay={...(S.pay||{}),rates:{...((S.pay||{}).rates||{}),[f.tid]:cur}}; logAct(`Oylik summa: ${S.staff[f.tid]?.fio} · ${som(v)} so'm`); closeSheet(); render(); }catch(e){ failed(e); } };
+A.payCx=d=>confirmSheet("Ushlanmani bekor qilish",`${som(d.amt)} so'm qaytariladi. Sababi tarixda saqlanadi.`,"payCxDo","Bekor qilish","grn",{withNote:"Sababi (majburiy)",data:{tid:d.tid,mon:d.mon,key:d.key,amt:d.amt}});
+A.payCxDo=async d=>{ const why=String(S.f.note||"").trim(); if(!why) return $("fErr").textContent="Sababini yozing.";
+  try{ await metaUpd("payroll",`m.${d.mon}.${d.tid}.cx.${d.key}`,{why,by:S.me.name,at:Date.now(),amt:+d.amt||0}); logAct(`Ushlanma bekor: ${S.staff[d.tid]?.fio} · ${som(d.amt)} · ${why}`); closeSheet(); toast("Bekor qilindi"); }catch(e){ failed(e); } };
+A.payUncx=async d=>{ try{ await updateDoc(doc(db,C.meta,"payroll"),{[`m.${d.mon}.${d.tid}.cx.${d.key}`]:deleteField()}); toast("Ushlanma qaytarildi"); }catch(e){ failed(e); } };
+A.payPaid=async d=>{ const x=payCalc(d.tid,d.mon);
+  try{ if(d.v==="1"){ await metaUpd("payroll",`m.${d.mon}.${d.tid}.paid`,{at:Date.now(),by:S.me.name,sum:x.ber}); logAct(`Oylik to'landi: ${x.t.fio} · ${som(x.ber)}`); toast("To'landi deb belgilandi"); }
+    else { await updateDoc(doc(db,C.meta,"payroll"),{[`m.${d.mon}.${d.tid}.paid`]:deleteField()}); toast("Belgi olindi"); } }catch(e){ failed(e); } };
+A.payCsv=d=>{ const mon=d.mon, L=payStaff().map(t=>payCalc(t.id,mon)).filter(Boolean);
+  const q=v=>`"${String(v??"").replace(/"/g,'""')}"`;
+  const rows=[["O'qituvchi","Guruhlar","O'quvchilar","Hisoblangan","Ushlangan","Bekor qilingan","Beriladi","To'landi"]];
+  L.forEach(x=>rows.push([x.t.fio,x.groups.map(g=>`${clsName(g.cid)} ${g.fan}`).join("; "),Math.round(x.groups.reduce((a,g)=>a+g.n,0)),x.hisob,x.ush,x.cxs,x.ber,x.paid?dTxt(dk(x.paid.at)):""]));
+  rows.push([]); rows.push(["Ushlanmalar"]); rows.push(["O'qituvchi","Sana","Sinf","Dars","Fan","O'quvchi","Summa","Holat"]);
+  L.forEach(x=>x.ded.forEach(z=>rows.push([x.t.fio,dTxt(z.d),clsName(z.cid),z.i+1,z.fan,z.n,z.amt,z.cx?"Bekor: "+z.cx.why:"Ushlangan"])));
+  const csv="\ufeff"+rows.map(r=>r.map(q).join(";")).join("\r\n");
+  const a=document.createElement("a"); a.href=URL.createObjectURL(new Blob([csv],{type:"text/csv;charset=utf-8"})); a.download=`Oyliklar_${mon}.csv`; document.body.append(a); a.click(); setTimeout(()=>{ URL.revokeObjectURL(a.href); a.remove(); },500);
+};
+
+/* ================= attendance: link to schedule slot + marking times ================= */
+A.slotGo=d=>{ const x=tSlotsOn(S.me.staffId,today()).find(z=>z.cid===d.cid&&z.i===+d.i); if(!x) return;
+  const ts=todaySlots(S.me.staffId).find(z=>z.cid===d.cid&&z.i===+d.i);
+  if(ts&&ts.l){ A.attEdit({did:ts.l.docId,lid:ts.l.lid}); S.ad.sl=x.i; return; }
+  S.ad={kind:"dars",cid:x.cid,fan:x.f,t:x.s,date:today(),m:{},sl:x.i}; A.adGo(); };
+const _attEdit0=A.attEdit;
+A.attEdit=d=>{ _attEdit0(d); const l=S.att[d.did]?.L?.[d.lid]; if(S.ad&&l){ S.ad.sl=l.sl; S.ad.tidOrig=l.tid; S.ad.mt=l.mt||null; S.ad.lidAt=l.at; S.ad.sv=l.sv; } };
+A.amSave=async()=>{
+  const a=S.ad; const list=a.kind==="dars"?activeIn(a.cid):a.sids;
+  const miss=(a.kind==="dars"?list.map(s=>s.id):list).filter(id=>!a.m[id]).length;
+  if(miss&&!a._warned){ a._warned=1; toast(`${miss} ta o'quvchi belgilanmagan. Yana bir bossangiz shunday saqlanadi.`); return; }
+  const lid=a.lid||uid6(), mon=monOf(a.date), now=Date.now();
+  const docId=a.docId||(a.kind==="dars"?`${a.cid}_${mon}`:`q_${S.me.staffId}_${mon}`);
+  if(a.kind==="dars"&&a.sl==null&&a.date===today()){ const x=tSlotsOn(S.me.staffId,a.date).filter(z=>z.cid===a.cid&&z.f===a.fan); const used=new Set(lessonsOf(a.cid,a.date).filter(l=>l.lid!==a.lid&&l.sl!=null).map(l=>l.sl)); const pick=x.find(z=>!used.has(z.i)&&a.t>=daysBack(z.s,10)&&a.t<=z.e)||x.find(z=>!used.has(z.i)&&a.t<=z.e); if(pick) a.sl=pick.i; }
+  const mt={}; Object.keys(a.m).forEach(sid=>{ mt[sid]=(a.mt&&a.mt[sid])||now; });
+  const obj={date:a.date,at:a.lidAt||now,sv:now,t:a.t,fan:a.fan,tid:a.lid&&a.tidOrig?a.tidOrig:(S.me.staffId||""),tn:S.me.name,kind:a.kind,m:a.m,mt,...(a.sl!=null?{sl:a.sl}:{}),...(a.kind==="qosh"?{gn:a.gn||"Qo'shimcha mashg'ulot"}:{})};
+  try{ await attWrite(docId,{cid:a.kind==="dars"?a.cid:"",month:mon,...(a.kind==="qosh"?{tid:S.me.staffId}:{})},lid,obj);
+    const c=attCount([obj]); toast(`Saqlandi · ${c.b+c.k} bor${c.y?", "+c.y+" yo'q":""}`); S.ad=null; go(a.kind==="dars"&&role()==="oqit"?"tc":"home",...(a.kind==="dars"&&role()==="oqit"?[a.cid]:[])); }
+  catch(e){ failed(e); }
+};
+const daysBack=(t,min)=>{ const [h,m]=t.split(":").map(Number); const v=Math.max(0,h*60+m-min); return pad2(Math.floor(v/60))+":"+pad2(v%60); };
+
+/* ================= hooks into existing screens ================= */
+function todayCardHtml(){
+  if(!S.me.staffId) return "";
+  const sl=todaySlots(S.me.staffId); if(!S.jad||!Object.keys(jad().w||{}).length) return "";
+  const pill={ok:["Bajarildi","--gr-s","--gr"],bad:["Kech qoldi","--pk-s","--pk"],now:["Yo'qlama qiling","--or-s","--or"],later:["Keyin","--bl-s","--bl"]};
+  return sec(`Bugungi darslarim${isOffDay(today())?" · dam kuni":""}`,`<button class="a" data-go="tjad">Haftalik</button>`)+`<div class="card">${sl.map(x=>{ const p=pill[x.st]; return `<button class="row" data-act="slotGo" data-cid="${x.cid}" data-i="${x.i}"><span class="ic" style="background:var(--bg);color:var(--muted);font-size:12px;font-weight:600;width:34px">${x.i+1}</span><div class="mid"><b>${esc(clsName(x.cid))} · ${esc(x.f)}</b><small>${esc(x.s)}–${esc(x.e)} · ${x.l?`${x.marked}/${x.n} belgilandi`:x.st==="now"&&x.left>0?`tugashiga ${x.left} daqiqa`:`${x.n} o'quvchi`}</small></div>${tag(p[0],p[1],p[2])}</button>`; }).join("")||`<p class="mini" style="padding:12px">${isOffDay(today())?esc((jad().off||{})[today()])+" · dars yo'q":"Bugun jadvalda darsingiz yo'q"}</p>`}</div>`;
+}
+const _tHome0=tHome;
+tHome=function(){ const v=_tHome0(); const extra=todayCardHtml(); const x=S.me.staffId&&S.pay?payCalc(S.me.staffId,curMon()):null;
+  const pay=x&&(x.hisob||x.ded.length)?`<button class="note" style="background:#fff;border:1px solid var(--line);width:calc(100% - 28px);text-align:left" data-go="oyl"><i class="ti ti-cash" style="color:var(--gr)"></i><div style="flex:1"><b>${monName(curMon())} oyligim</b>${som(x.ber)} so'm${x.ush?` · <span style="color:var(--pk)">ushlangan −${som(x.ush)}</span>`:""}</div><i class="ti ti-chevron-right chev"></i></button>`:"";
+  const i=v.html.indexOf('<div class="qa"'); if(i>0) v.html=v.html.slice(0,i)+extra.replace('<div class="sec"','<div class="sec" style="margin-top:12px"')+pay+v.html.slice(i).replace('<div class="qa" style="margin-top:12px">','<div class="qa" style="margin-top:12px">'); else v.html+=extra+pay;
+  return v; };
+const _rahHome0=rahHome;
+rahHome=function(){ const v=_rahHome0(); const tile=(i,c,tt,g)=>`<button data-go="${g}">${icBox(i,c)}${tt}</button>`;
+  v.html=v.html.replace(/(<div class="sec"><h3>Bo'limlar<\/h3><\/div><div class="qa">)/,`$1${tile("ti-calendar","--bl","Dars jadvali","jadval")}${canPay()?tile("ti-cash","--gr","Oyliklar","oylik"):""}`);
+  if(canPay()){ const mon=curMon(), L=payStaff().map(t=>payCalc(t.id,mon)).filter(Boolean), ush=L.reduce((a,x)=>a+x.ush,0), td=L.reduce((a,x)=>a+x.ded.filter(z=>z.d===today()&&!z.cx).length,0);
+    if(L.length) v.html=v.html.replace(/(<div class="sec"><h3>Bu hafta intizom)/,`<button class="note" style="background:#fff;border:1px solid var(--line);width:calc(100% - 28px);text-align:left" data-go="oylik"><i class="ti ti-cash" style="color:var(--gr)"></i><div style="flex:1"><b>${monName(mon)} oyliklari</b>Fond ${som(L.reduce((a,x)=>a+x.hisob,0))} · ushlangan <span style="color:var(--pk)">${som(ush)}</span>${td?` · bugun ${td} dars kechikdi`:""}</div><i class="ti ti-chevron-right chev"></i></button>$1`); }
+  return v; };
+/* desktop sidebar + teacher profile links */
+const _render0=render;
+render=function(){ _render0(); const sd=$("side"); if(sd&&isRah()&&sd.innerHTML){ const cur=S.route[0];
+  const btn=(k,i,t)=>`<button data-go="${k}" ${cur===k||(k==="oylik"&&cur==="oyl")?'aria-current="page"':""}><i class="ti ${i}"></i>${t}</button>`;
+  const st=sd.querySelector('[data-go="stats"]'); if(st&&!sd.querySelector('[data-go="jadval"]')) st.insertAdjacentHTML("beforebegin",btn("jadval","ti-calendar","Dars jadvali")+(canPay()?btn("oylik","ti-cash","Oyliklar"):"")); } };
+const _tme0=VIEWS.tme;
+VIEWS.tme=function(){ const v=_tme0(); const add=`<div class="card" style="margin-top:12px"><button class="row" data-go="oyl">${icBox("ti-cash","--gr")}<div class="mid"><b>Mening oyligim</b><small>Hisoblangan, ushlangan va beriladigan summa</small></div><i class="ti ti-chevron-right chev"></i></button><button class="row" data-go="tjad">${icBox("ti-calendar","--bl")}<div class="mid"><b>Mening jadvalim</b><small>Haftalik darslar</small></div><i class="ti ti-chevron-right chev"></i></button></div>`;
+  const i=v.html.indexOf('<div class="btns">'); v.html=i>0?v.html.slice(0,i)+add+v.html.slice(i):v.html+add; return v; };
+
+A.jFrom=()=>openSheet("jfrom",{d:jad().from||today()});
+SHEETS.jfrom=()=>["Ushlash qachondan",`<p class="mini">Shu kundan oldingi darslar uchun hech narsa ushlanmaydi. Jadval to'liq kiritilgan kunni tanlang.</p><input class="inp" type="date" data-k="d" value="${esc(S.f.d||"")}"><p class="err" id="fErr"></p><button class="btn" data-act="jFromSave"><i class="ti ti-check"></i>Saqlash</button>`];
+A.jFromSave=async()=>{ const d=S.f.d; if(!/^\d{4}-\d\d-\d\d$/.test(d||"")) return $("fErr").textContent="Sanani tanlang."; try{ await metaUpd("jadval","from",d); S.jad={...(S.jad||{}),from:d}; logAct(`Ushlash boshlanishi: ${dTxt(d)}`); closeSheet(); render(); }catch(e){ failed(e); } };
 
 </script>
 </body>
