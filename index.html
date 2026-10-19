@@ -3073,6 +3073,66 @@ A.jFrom=()=>openSheet("jfrom",{d:jad().from||today()});
 SHEETS.jfrom=()=>["Ushlash qachondan",`<p class="mini">Shu kundan oldingi darslar uchun hech narsa ushlanmaydi. Jadval to'liq kiritilgan kunni tanlang.</p><input class="inp" type="date" data-k="d" value="${esc(S.f.d||"")}"><p class="err" id="fErr"></p><button class="btn" data-act="jFromSave"><i class="ti ti-check"></i>Saqlash</button>`];
 A.jFromSave=async()=>{ const d=S.f.d; if(!/^\d{4}-\d\d-\d\d$/.test(d||"")) return $("fErr").textContent="Sanani tanlang."; try{ await metaUpd("jadval","from",d); S.jad={...(S.jad||{}),from:d}; logAct(`Ushlash boshlanishi: ${dTxt(d)}`); closeSheet(); render(); }catch(e){ failed(e); } };
 
+
+/* ================= PIN: SMS orqali berish + kodlar tarixi (faqat CEO) =================
+   tarix: mn_log {kind:"pin", act, name, prole, pin, tel, by, role, at, text} */
+const IOS_=/iPad|iPhone|iPod/.test(navigator.userAgent);
+const telNorm=t=>{ let d=String(t||"").replace(/\D/g,""); if(d.length===9) d="998"+d; return d.length>=11?"+"+d:""; };
+function pinTel(p){ if(!p) return ""; if(p.staffId) return telNorm(S.staff[p.staffId]?.tel); if(p.role==="ota"){ for(const k of (p.kids||[])){ const t=telNorm(S.students[k]?.tel); if(t) return t; } } return telNorm(p.tel); }
+const smsText=p=>`${S.cfg.name||"Maktab"} · Maktab Nazorati\n${p.name}, ilovaga kirish kodingiz: ${p.pin}\nIlova: ${appUrl()}\nKodni hech kimga bermang.`;
+const smsHref=(tel,p)=>`sms:${tel}${IOS_?"&":"?"}body=${encodeURIComponent(smsText(p))}`;
+const PACT={ berildi:["Berildi","ti-key","--gr"], yangi:["Yangi kod","ti-refresh","--or"], sms:["SMS yuborildi","ti-message","--bl"], blok:["Bloklandi","ti-ban","--pk"], ochildi:["Blokdan chiqarildi","ti-lock-open","--gr"], ochirildi:["O'chirildi","ti-trash","--pk"] };
+function pinLog(act,p,extra={}){
+  if(!S.me||!p) return;
+  const tel=pinTel(p);
+  addDoc(collection(db,C.log),{kind:"pin",act,name:p.name||"",prole:p.role||"",pin:p.pin||"",tel,by:S.me.name,role:S.me.role,at:Date.now(),text:`PIN · ${PACT[act]?.[0]||act}: ${p.name||""}`,...extra}).catch(()=>{});
+  S.pinlog=null;
+}
+const bossOnly=()=>{ if(isBoss()&&!S.preview) return true; toast("PIN kodni faqat CEO beradi"); return false; };
+/* guard + log every PIN action */
+const _wrap=(name,fn)=>{ const o=A[name]; A[name]=async(d,t,e)=>{ if(!bossOnly()) return; return fn(o,d||{},t,e); }; };
+_wrap("pinForStaff",async(o,d)=>{ const had=pinOfStaff(d.tid); await o(d); if(!had&&S.sheet==="pin"&&S.f.fresh){ const t=S.staff[d.tid]; pinLog("berildi",{pin:S.f.pin,name:t?.fio,role:t?.role,staffId:d.tid}); } });
+_wrap("kidPin",async(o,d)=>{ const had=pinsOfKid(d.sid).length; await o(d); if(!had&&S.sheet==="pin"&&S.f.fresh){ const s=S.students[d.sid]; pinLog("berildi",{pin:S.f.pin,name:s?.ota||(s?fullName(s)+"ning ota-onasi":""),role:"ota",kids:[d.sid]}); } });
+_wrap("pinRegen",async(o,d)=>{ const p=S.pins.find(x=>x.pin===d.pin); await o(d); if(p&&S.sheet==="pin"&&S.f.pin!==d.pin) pinLog("yangi",{...p,pin:S.f.pin},{old:d.pin}); });
+_wrap("pinCustomDo",async(o,d)=>{ const old=S.f.pin, p=S.pins.find(x=>x.pin===old); await o(d); if(p&&S.sheet==="pin"&&S.f.pin!==old) pinLog("yangi",{...p,pin:S.f.pin},{old}); });
+_wrap("pinBlock",async(o,d)=>{ const p=S.pins.find(x=>x.pin===S.f.pin); await o(d); if(p&&p.pin!==S.me.pin) pinLog(p.blocked?"ochildi":"blok",p); });
+_wrap("pinDel",async(o,d)=>{ const p=S.pins.find(x=>x.pin===d.pin); await o(d); if(p) pinLog("ochirildi",p); });
+["pinNew","pinRegenAsk","pinCustom","pinDelAsk","pinKidAdd","pinKidDo","pinRmKid"].forEach(n=>{ const o=A[n]; if(o) A[n]=(...a)=>bossOnly()?o(...a):undefined; });
+/* SMS link: let the phone open its SMS app, and record it */
+document.addEventListener("click",e=>{ const a=e.target.closest("[data-sms]"); if(!a) return; const p=S.pins.find(x=>x.pin===a.dataset.sms); if(p) pinLog("sms",p); },true);
+const _pinSheet0=SHEETS.pin;
+SHEETS.pin=()=>{
+  const [title,body]=_pinSheet0();
+  const p=S.pins.find(x=>x.pin===S.f.pin); if(!p||p.blocked) return [title,body];
+  const tel=pinTel(p), sent=(S.pinlog&&Array.isArray(S.pinlog)?S.pinlog:[]).find(x=>x.act==="sms"&&x.pin===p.pin);
+  const sms=tel?`<a class="btn grn" style="text-decoration:none" data-sms="${p.pin}" href="${smsHref(tel,p)}"><i class="ti ti-message"></i>SMS orqali yuborish · ${esc(tel)}</a>${sent?`<p class="mini" style="text-align:center;margin-top:-4px">Oxirgi SMS: ${ago(sent.at)}</p>`:""}`
+    :`<div class="note" style="margin:0;background:var(--or-ss);border:1px solid var(--or-b)"><i class="ti ti-phone-off" style="color:var(--or)"></i><div>Telefon raqami kiritilmagan. ${p.role==="ota"?"O'quvchi ma'lumotiga ota-ona raqamini":"Xodim ma'lumotiga raqamini"} yozsangiz, SMS tugmasi chiqadi.</div></div>`;
+  const i=body.indexOf('<div class="btn2">');
+  return [title,i>=0?body.slice(0,i)+sms+body.slice(i):body+sms];
+};
+/* ---------- Kodlar tarixi ---------- */
+function loadPinLog(){ if(S.pinlog===undefined||S.pinlog===null){ S.pinlog="loading"; getDocs(query(collection(db,C.log),where("kind","==","pin"))).then(s=>{ S.pinlog=s.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>b.at-a.at); later(); }).catch(()=>{ S.pinlog=[]; later(); }); } }
+function pinLogList(){
+  const all=Array.isArray(S.pinlog)?S.pinlog:[], f=S.ui.plf||"all", q=norm(S.ui.q), rv=S.ui.rev||{};
+  let l=f==="all"?all:all.filter(x=>x.act===f||(f==="blok"&&x.act==="ochildi")||(f==="yangi"&&x.act==="ochirildi"));
+  if(q) l=l.filter(x=>norm(x.name+" "+x.tel+" "+x.pin).includes(q));
+  return `<div class="card">${S.pinlog==="loading"?emptyBox("ti-loader","Yuklanmoqda…"):l.map(x=>{ const a=PACT[x.act]||[x.act,"ti-key","--bl"]; return `<div class="row" style="min-height:58px">${icBox(a[1],a[2])}<div class="mid"><b>${esc(x.name)}</b><small>${a[0]} · ${esc(ROLE[x.prole]?.n||"")}${x.tel?" · "+esc(x.tel):""}<br>${dTxt(dk(x.at))} ${hm(x.at)} · ${esc(x.by)}</small></div><button class="pin" style="background:none;font-size:13px;letter-spacing:1px;flex:none;padding:0 4px;${rv[x.id]?"color:var(--or)":"color:var(--muted)"}" data-act="plRev" data-id="${x.id}">${rv[x.id]?esc(x.pin.slice(0,3)+" "+x.pin.slice(3)):"••• •••"}</button></div>`; }).join("")||emptyBox("ti-history","Hali yozuv yo'q. Bundan keyin berilgan har bir kod shu yerda saqlanadi.")}</div>`;
+}
+VIEWS.pinlog=()=>{
+  if(!isBoss()||S.preview) return {bar:{t:"Kodlar tarixi",back:"home"},html:`<div class="card" style="margin-top:12px">${emptyBox("ti-lock","Faqat CEO ko'radi")}</div>`};
+  loadPinLog(); const all=Array.isArray(S.pinlog)?S.pinlog:[], f=S.ui.plf||"all";
+  const chip=(k,t)=>`<button class="chip" data-act="ui" data-k="plf" data-v="${k}" aria-pressed="${f===k}">${t}</button>`, cnt=k=>all.filter(x=>x.act===k).length;
+  let h=`<div class="pk2"><div><span>Berilgan kodlar</span><b class="num">${cnt("berildi")}</b></div><div><span>SMS yuborilgan</span><b class="num">${cnt("sms")}</b></div></div>`;
+  h+=`<div class="search"><i class="ti ti-search"></i><input id="q" data-ui="q" value="${esc(S.ui.q||"")}" placeholder="Ism, telefon yoki kod" autocomplete="off" inputmode="search"></div>`;
+  h+=`<div class="chips">${chip("all","Hammasi")}${chip("berildi","Berildi")}${chip("sms","SMS")}${chip("yangi","Yangilangan")}${chip("blok","Bloklangan")}</div><div id="lst">${pinLogList()}</div>`;
+  return {bar:{t:"Kodlar tarixi",s:"Faqat siz ko'rasiz",back:"pins",acts:`<button class="ib" data-act="plReload" aria-label="Yangilash"><i class="ti ti-refresh"></i></button>`},html:h,list:pinLogList};
+};
+A.plRev=d=>{ S.ui.rev=S.ui.rev||{}; S.ui.rev[d.id]=!S.ui.rev[d.id]; relist(); };
+A.plReload=()=>{ S.pinlog=null; render(); };
+ALLOW.rah.push("pinlog"); SECTION.pinlog="settings";
+const _pinsView0=VIEWS.pins;
+VIEWS.pins=(...a)=>{ const v=_pinsView0(...a); loadPinLog(); v.html=v.html.replace('<div class="btns"><button class="btn" data-act="pinNew">',`<div class="btns"><button class="btn ghost" data-go="pinlog" style="margin-bottom:8px"><i class="ti ti-history"></i>Kodlar tarixi${Array.isArray(S.pinlog)?` · ${S.pinlog.length}`:""}</button><button class="btn" data-act="pinNew">`); return v; };
+
 </script>
 </body>
 </html>
