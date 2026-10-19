@@ -321,6 +321,61 @@ select.inp{appearance:none;background:#fff url("data:image/svg+xml,%3Csvg xmlns=
   .sh-bg{align-items:center}
   .sh{border-radius:22px}
 }
+
+/* ===== photos ===== */
+.av{overflow:hidden}
+.av img,.pa img{width:100%;height:100%;object-fit:cover;border-radius:50%;display:block}
+.av.xl{width:56px;height:56px;font-size:18px}
+.av.sm{width:30px;height:30px;font-size:11px}
+.av:not([style]){background:var(--role-s);color:var(--role)}
+.prof .pa{position:relative}
+.pa .cam{position:absolute;right:-3px;bottom:-3px;width:28px;height:28px;border-radius:50%;background:var(--ink);color:#fff;border:2px solid #fff;display:flex;align-items:center;justify-content:center;font-size:14px}
+.fpick{border:1px solid var(--line)!important;border-radius:16px;cursor:pointer}
+/* ===== voice ===== */
+.vrbtn{display:flex;align-items:center;justify-content:center;gap:8px;min-height:46px;border-radius:14px;border:1.5px dashed #b7c2d3;background:#fff;font-weight:600;width:100%}
+.vrbtn i{color:var(--pk);font-size:20px}
+.vrec{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:14px;background:var(--pk-ss);border:1px solid var(--pk-b);min-height:52px}
+.vrec b{font-size:15px;font-weight:600;color:var(--pk)}
+.rdot{width:12px;height:12px;border-radius:50%;background:var(--pk);animation:pulse 1s ease-in-out infinite;flex:none}
+@keyframes pulse{50%{opacity:.25;transform:scale(.8)}}
+.btn.sm{min-height:38px;width:auto;padding:0 12px;font-size:13.5px;border-radius:12px}
+.btn.mic{width:52px;padding:0;background:var(--pk)}
+.vbub{display:flex;align-items:center;gap:8px;padding:6px 10px 6px 6px;border-radius:16px;background:var(--gr-ss);border:1px solid #c7efd5;max-width:280px}
+.vbub.p{background:var(--pk-ss);border-color:var(--pk-b)}
+.vbub.mine{background:var(--role-ss);border-color:var(--line)}
+.vbub .vp{width:36px;height:36px;border-radius:50%;background:var(--gr);color:#fff;display:flex;align-items:center;justify-content:center;flex:none;font-size:16px}
+.vbub.p .vp{background:var(--pk)}
+.vbub.mine .vp{background:var(--role)}
+.vbub .vp.ld{opacity:.5}
+.vbub .vp.on{box-shadow:0 0 0 4px rgba(0,0,0,.08)}
+.vbub .vd{font-size:12.5px;font-weight:600;color:var(--muted);flex:none}
+.vbub .vx{width:32px;height:32px;color:var(--pk);font-size:18px;flex:none}
+.wave{display:flex;align-items:center;gap:2px;flex:1;min-width:0;height:28px;overflow:hidden;color:var(--gr)}
+.vbub.p .wave{color:var(--pk)}
+.vbub.mine .wave{color:var(--role)}
+.wave i{display:block;width:3px;border-radius:2px;flex:none;opacity:.75}
+/* ===== chat ===== */
+.sender{display:flex;align-items:center;gap:12px;margin-top:8px;padding:10px;border-radius:14px;background:var(--gr-ss)}
+.sender b{display:block;font-size:16px;font-weight:600}
+.sender small{display:block;font-size:12.5px;color:var(--gr);font-weight:600;margin-top:2px}
+.chat{display:flex;flex-direction:column;gap:12px;margin:14px 14px 0}
+.msg{display:flex;gap:8px;align-items:flex-end;max-width:88%}
+.msg.me{align-self:flex-end;flex-direction:row-reverse}
+.msg .mb{display:flex;flex-direction:column;gap:5px;min-width:0}
+.msg.me .mb{align-items:flex-end}
+.msg .mn{font-size:11.5px;color:var(--muted);font-weight:600}
+.msg .tx{background:#fff;border:1px solid var(--line);padding:9px 12px;border-radius:16px 16px 16px 4px;font-size:14px;white-space:pre-wrap;word-break:break-word}
+.msg.p .tx{background:var(--pk-ss);border-color:var(--pk-b)}
+.msg.me .tx{border-radius:16px 16px 4px 16px}
+.msg .mt{font-size:11px;color:var(--faint)}
+.row.thr{align-items:flex-start}
+.row.thr .rt{display:flex;flex-direction:column;align-items:flex-end;gap:6px;flex:none}
+.row.thr.un{background:var(--pk-ss)}
+.row.thr.un .mid b{color:var(--pk)}
+.udot{width:10px;height:10px;border-radius:50%;background:var(--pk);flex:none}
+.newmsg{margin-top:12px;width:calc(100% - 28px);border:1.5px solid var(--pk-b);border-radius:16px}
+.rlist{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.rlist span{padding:8px 10px;border-radius:10px;background:var(--bg);font-size:12.5px}
 </style>
 </head>
 <body>
@@ -401,7 +456,7 @@ try{ db = initializeFirestore(fb, { localCache: persistentLocalCache({ tabManage
 catch(e){ console.error(e); db = initializeFirestore(fb, {}); }
 
 /* ================= constants ================= */
-const C = { meta:"mn_meta", pins:"mn_pins", sess:"mn_sess", stf:"mn_staff", cls:"mn_classes", stu:"mn_students", rec:"mn_rec", req:"mn_req", log:"mn_log", att:"mn_att", grd:"mn_grd", tests:"mn_tests", grp:"mn_grp" };
+const C = { meta:"mn_meta", pins:"mn_pins", sess:"mn_sess", stf:"mn_staff", cls:"mn_classes", stu:"mn_students", rec:"mn_rec", req:"mn_req", log:"mn_log", att:"mn_att", grd:"mn_grd", tests:"mn_tests", grp:"mn_grp", thr:"mn_thr", msg:"mn_msg", voice:"mn_voice", ava:"mn_ava" };
 const LS="mn_session";
 const ROLE={
   admin:{n:"Bosh admin", i:"ti-crown"},
@@ -424,7 +479,7 @@ const ROLE_COL={ admin:["--or-s","--or"], direktor:["--or-s","--or"], zavuch:["-
 const DEF_FANLAR=["Matematika","Ona tili","O'qish","Ingliz tili","Rus tili","Tabiiy fanlar","Tarix","Geografiya","Fizika","Kimyo","Biologiya","Informatika","Jismoniy tarbiya","Tasviriy san'at"];
 const DEF_TYPES={
   neg:[ {id:"kech",n:"Kechikdi",d:-1,i:"ti-clock"}, {id:"telefon",n:"Telefon",d:-2,i:"ti-device-mobile"}, {id:"buzdi",n:"Darsni buzdi",d:-3,i:"ti-volume"}, {id:"uyv",n:"Uy vazifasi yo'q",d:-1,i:"ti-notebook"}, {id:"forma",n:"Forma yo'q",d:-1,i:"ti-shirt"}, {id:"janjal",n:"Janjal",d:-5,i:"ti-swords"}, {id:"hurmat",n:"Hurmatsizlik",d:-3,i:"ti-mood-angry"}, {id:"mkech",n:"Maktabga kechikdi",d:-1,i:"ti-clock-exclamation"}, {id:"yotoq",n:"Yotoqxona tartibi",d:-2,i:"ti-bed"}, {id:"tayyor",n:"Darsga tayyor emas",d:-1,i:"ti-backpack"}, {id:"ruxsat",n:"Ruxsatsiz chiqib ketdi",d:-3,i:"ti-door-exit"}, {id:"kochir",n:"Ko'chirib yozdi",d:-2,i:"ti-copy"}, {id:"ovqat",n:"Ovqatlanish tartibi",d:-1,i:"ti-tools-kitchen-2"}, {id:"zarar",n:"Mulkka zarar yetkazdi",d:-5,i:"ti-hammer"}, {id:"soz",n:"Qo'pol so'z ishlatdi",d:-3,i:"ti-message-x"} ],
-  pos:[ {id:"faol",n:"Faol qatnashdi",d:1,i:"ti-hand-finger"}, {id:"yordam",n:"Do'stiga yordam",d:2,i:"ti-heart-handshake"}, {id:"tadbir",n:"Tadbirda faol",d:3,i:"ti-confetti"}, {id:"tozalik",n:"Tozalik uchun",d:3,i:"ti-sparkles"}, {id:"vazifa",n:"Uy vazifasi a'lo",d:1,i:"ti-notebook"}, {id:"tashab",n:"Tashabbus ko'rsatdi",d:2,i:"ti-bulb"}, {id:"navbat",n:"Navbatchilik a'lo",d:1,i:"ti-broom"}, {id:"kitob",n:"Kitob o'qidi",d:1,i:"ti-book"}, {id:"musob",n:"Musobaqada g'olib",d:5,i:"ti-trophy"}, {id:"odob",n:"Odobli muomala",d:1,i:"ti-mood-smile"}, {id:"ozlash",n:"Bilimi o'sdi",d:2,i:"ti-trending-up"} ]
+  pos:[ {id:"faol",n:"Faol qatnashdi",d:1,i:"ti-hand-finger"}, {id:"yordam",n:"Do'stiga yordam",d:2,i:"ti-heart-handshake"}, {id:"tadbir",n:"Tadbirda faol",d:3,i:"ti-confetti"}, {id:"tozalik",n:"Tozalik uchun",d:3,i:"ti-sparkles"}, {id:"vazifa",n:"Uy vazifasi a'lo",d:1,i:"ti-notebook"}, {id:"tashab",n:"Tashabbus ko'rsatdi",d:2,i:"ti-bulb"}, {id:"navbat",n:"Navbatchilik a'lo",d:1,i:"ti-brush"}, {id:"kitob",n:"Kitob o'qidi",d:1,i:"ti-book"}, {id:"musob",n:"Musobaqada g'olib",d:5,i:"ti-trophy"}, {id:"odob",n:"Odobli muomala",d:1,i:"ti-mood-smile"}, {id:"ozlash",n:"Bilimi o'sdi",d:2,i:"ti-trending-up"} ]
 };
 const LVL_NEG=[["Yengil",-1],["O'rta",-3],["Jiddiy",-5]], LVL_POS=[["Kichik",1],["O'rta",3],["Katta",5]];
 const MONTHS=["yanvar","fevral","mart","aprel","may","iyun","iyul","avgust","sentabr","oktabr","noyabr","dekabr"];
@@ -459,7 +514,7 @@ const staffShort=t=>{ const p=String(t?.fio||"").trim().split(/\s+/); return p.l
 const inits=s=>{ const p=String(fullName(s)).trim().split(/\s+/); return ((p[0]||"")[0]||"").toUpperCase()+((p[1]||"")[0]||"").toUpperCase(); };
 const hashN=str=>{ let h=2166136261; for(const c of String(str)){ h^=c.charCodeAt(0); h=Math.imul(h,16777619)>>>0; } return h; };
 const avc=id=>PAL[hashN(id)%PAL.length];
-const av=(o,id,cls="")=>{ const [bg,fg]=avc(id); return `<span class="av ${cls}" style="background:${css(bg)};color:${css(fg)}">${esc(inits(o)||"?")}</span>`; };
+const av=(o,id,cls="")=>{ const [bg,fg]=avc(id); return o?.foto?`<span class="av ${cls}"><img src="${o.foto}" alt=""></span>`:`<span class="av ${cls}" style="background:${css(bg)};color:${css(fg)}">${esc(inits(o)||"?")}</span>`; };
 const byName=(a,b)=>fullName(a).localeCompare(fullName(b),"uz");
 const clsSort=(a,b)=>(a.grade-b.grade)||String(a.letter||"").localeCompare(String(b.letter||""),"uz");
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
@@ -657,7 +712,7 @@ function render(){
   const scur=name==="stu"?"students":name==="cls"?"classes":name==="st"?"staff":["set","log","archive"].includes(name)?"settings":name;
   $("side").innerHTML=sideItems.length?`<div class="brand"><span class="lg"></span><div><b>Maktab Nazorati</b><small>${esc(S.cfg.name||"")}</small></div></div>${sideItems.map(([k,i,t])=>`<button data-go="${k}" ${scur===k?'aria-current="page"':""}><i class="ti ${i}"></i>${t}${k==="notif"&&openReqs().filter(reqActionable).length?`<span class="cnt">${openReqs().filter(reqActionable).length}</span>`:""}</button>`).join("")}<div class="me"><p>${esc(S.me.name)}<small>${esc(ROLE[role()]?.n||"")}</small></p><button data-act="logoutAsk"><i class="ti ti-logout"></i>Chiqish</button></div>`:"";
   $("nav").hidden=!items.length;
-  const unread=isRah()?openReqs().filter(r=>reqActionable(r)).length:role()==="oqit"?tAlerts().length:0;
+  const unread=(isRah()?openReqs().filter(r=>reqActionable(r)).length:role()==="oqit"?tAlerts().length:0)+myUnread();
   $("nav").innerHTML=items.map(([k,i,t])=>k==="+"?`<button class="plus" data-act="plus" aria-label="Yangi yozuv"><span><i class="ti ti-plus"></i></span></button>`:`<button data-go="${k}" ${cur===k?'aria-current="page"':""}><span class="ni"><i class="ti ${i}"></i>${k==="notif"&&unread?`<b>${unread}</b>`:""}</span><span>${t}</span></button>`).join("");
   $("main").style.paddingBottom=items.length?"":"30px";
   if(S.sheet&&LIVE_SHEETS.has(S.sheet)) renderSheet();
@@ -823,13 +878,19 @@ VIEWS.stu=(id,tab="umumiy")=>{
   if(!s) return {bar:{t:"O'quvchi",back:"students"},html:emptyBox("ti-user-question",S.loaded.stu?"O'quvchi topilmadi":"Yuklanmoqda…")};
   const rah=rahbarOf(s.classId), recs=recsOf(id);
   const stTag=s.status==="ketgan"?`<span class="htag w" style="color:var(--muted)">Ketgan</span>`:s.status==="ketmoqda"?`<span class="htag w" style="color:var(--pk)">Ketmoqda</span>`:`<span class="htag w" style="color:var(--gr)">Faol</span>`;
-  let h=`<div class="hdr"><div class="prof"><span class="pa">${esc(inits(s))}</span><div style="min-width:0"><b>${esc(fullName(s))}</b><small>${esc(clsName(s.classId))} sinf${rah?" · Sinf rahbari: "+esc(staffShort(rah)):""}</small><div class="tags" style="display:flex;gap:6px;margin-top:6px;flex-wrap:wrap">${stTag}${isNew(s)?'<span class="htag">Yangi qabul</span>':""}</div></div></div></div>`;
+  let h=`<div class="hdr"><div class="prof">${paHtml(s.foto,inits(s),canFotoStu(s)?`data-act="fotoOpen" data-kind="stu" data-id="${id}"`:"")}<div style="min-width:0"><b>${esc(fullName(s))}</b><small>${esc(clsName(s.classId))} sinf${rah?" · Sinf rahbari: "+esc(staffShort(rah)):""}</small><div class="tags" style="display:flex;gap:6px;margin-top:6px;flex-wrap:wrap">${stTag}${isNew(s)?'<span class="htag">Yangi qabul</span>':""}</div></div></div></div>`;
   const ma=stuAttPct(id,daysAgo(29)), ga=stuAvg(id);
   h+=`<div class="kp3"><div><b class="num" style="color:${lvColor(score(s))}">${Math.round(score(s))}%</b><span>Intizom</span></div><div><b class="num" style="color:var(--gr)">${ma.p==null?"—":ma.p+"%"}</b><span>Davomat · oy</span></div><div><b class="num" style="color:var(--vi)">${ga==null?"—":fmt1(ga)}</b><span>O'rtacha baho</span></div></div>`;
   const tb=(k,t)=>`<button data-act="stuTab" data-v="${k}" data-id="${id}" aria-pressed="${tab===k}">${t}</button>`;
-  h+=`<div class="tabs">${tb("umumiy","Umumiy")}${tb("baho","Baholar")}${tb("dav","Davomat")}${tb("intizom","Intizom")}</div>`;
+  h+=`<div class="tabs">${tb("umumiy","Umumiy")}${tb("baho","Baholar")}${tb("dav","Davomat")}${tb("intizom","Intizom")}${tb("yoz",`Yozishmalar${thrOf(id).length?" ("+thrOf(id).length+")":""}`)}</div>`;
   if(tab==="baho") h+=stuBahoHtml(s);
   else if(tab==="dav") h+=stuDavHtml(s);
+  else if(tab==="yoz"){
+    const l=thrOf(id);
+    if(canMsg(s)) h+=`<div class="btns"><button class="btn grn" data-act="msgNew" data-sid="${id}"><i class="ti ti-message-plus"></i>Ota-onaga xabar yozish</button></div>`;
+    h+=sec(`Yozishmalar (${l.length})`)+thrListHtml(l);
+    h+=`<p class="mini" style="text-align:center;margin:10px 16px 0">${canSeeAll()?"Siz bu o'quvchining hamma yozishmasini ko'rasiz.":"Faqat o'zingiz yuborgan yozishmalar ko'rinadi."}</p>`;
+  }
   else if(tab==="intizom"){
     h+=sec(`Intizom yozuvlari (${recs.length})`)+`<div class="card">${recs.length?recs.map(r=>recEv(r,{del:1})).join(""):emptyBox("ti-mood-smile","Hali yozuv yo'q")}</div>`;
   } else {
@@ -838,6 +899,7 @@ VIEWS.stu=(id,tab="umumiy")=>{
     h+=sec("Oxirgi voqealar",recs.length>3?`<button class="a" data-go="stu/${id}/intizom">Hammasi</button>`:"")+`<div class="card">${recs.length?recs.slice(0,3).map(r=>recEv(r)).join(""):emptyBox("ti-mood-smile","Hali voqea yo'q")}</div>`;
     const b=[];
     if(canRecord(s)){ b.push(`<button class="sbtn" style="background:var(--gr-s);color:var(--gr)" data-act="recNew" data-sid="${id}" data-side="pos"><i class="ti ti-thumb-up"></i>Rag'bat</button>`); b.push(`<button class="sbtn" style="background:var(--pk-s);color:var(--pk)" data-act="recNew" data-sid="${id}" data-side="neg"><i class="ti ti-alert-triangle"></i>Hayfsan</button>`); }
+    if(canMsg(s)) b.push(`<button class="sbtn" style="background:var(--pk-s);color:var(--pk)" data-act="msgNew" data-sid="${id}"><i class="ti ti-message"></i>Ota-onaga xabar</button>`);
     if(s.tel) b.push(`<a class="sbtn" style="background:var(--bl-s);color:var(--bl);text-decoration:none" href="${telHref(s.tel)}"><i class="ti ti-phone"></i>Ota-onaga qo'ng'iroq</a>`);
     if(isBoss()) b.push(`<button class="sbtn" style="background:#fff;color:var(--or);border:1px solid var(--line)" data-act="kidPin" data-sid="${id}"><i class="ti ti-key"></i>Ota-ona PIN kodi</button>`);
     if(b.length) h+=`<div class="btn2" style="margin:12px 14px 0">${b.join("")}</div>`;
@@ -909,7 +971,7 @@ function staffListHtml(){
   l=[...l].sort((a,b)=>String(a.fio).localeCompare(String(b.fio),"uz"));
   if(!l.length) return `<div class="card">${emptyBox("ti-id-badge-2",staffList().length?"Hech kim topilmadi":"Hali xodim qo'shilmagan")}</div>`;
   return `<div class="card">${l.map(t=>{ const rc=rahbarCls(t.id), iss=staffIssue(t), p=isBoss()?pinOfStaff(t.id):null;
-    return `<button class="row" data-go="st/${t.id}">${av({fio:t.fio},t.id)}<div class="mid"><b>${esc(t.fio)}${(t.perms||[]).length?` <span class="tg" style="background:var(--vi-s);color:var(--vi);margin-left:4px">+ huquq</span>`:""}${rc.length?` <span class="tg" style="background:var(--or-s);color:var(--or);margin-left:4px">${rc.map(c=>esc(c.name)).join(", ")} rahbari</span>`:""}</b><small>${staffSub(t)}</small></div>${iss?tag(iss,"--pk-s","--pk"):p?`<span class="mini" style="color:${p.last&&dk(p.last)>=daysAgo(1)?"var(--gr)":"var(--muted)"};white-space:nowrap">${p.last?ago(p.last):"kirmagan"}</span>`:""}</button>`; }).join("")}</div>
+    return `<button class="row" data-go="st/${t.id}">${av(t,t.id)}<div class="mid"><b>${esc(t.fio)}${(t.perms||[]).length?` <span class="tg" style="background:var(--vi-s);color:var(--vi);margin-left:4px">+ huquq</span>`:""}${rc.length?` <span class="tg" style="background:var(--or-s);color:var(--or);margin-left:4px">${rc.map(c=>esc(c.name)).join(", ")} rahbari</span>`:""}</b><small>${staffSub(t)}</small></div>${iss?tag(iss,"--pk-s","--pk"):p?`<span class="mini" style="color:${p.last&&dk(p.last)>=daysAgo(1)?"var(--gr)":"var(--muted)"};white-space:nowrap">${p.last?ago(p.last):"kirmagan"}</span>`:""}</button>`; }).join("")}</div>
     ${isBoss()?`<p class="mini" style="text-align:center;margin:8px 14px 0">O'ngda — oxirgi marta qachon ilovaga kirgan</p>`:""}`;
 }
 VIEWS.st=id=>{
@@ -921,7 +983,7 @@ VIEWS.st=id=>{
   const p=isBoss()?pinOfStaff(id):null;
   const mine=S.recs.filter(r=>r.byStaff===id&&r.date>=daysAgo(6)), wl=lessonsCache().filter(l=>l.tid===id&&l.date>=daysAgo(6)).length, wg=gradesCache().filter(e=>e.tid===id&&e.date>=daysAgo(6)).reduce((a,e)=>a+Object.keys(e.m||{}).length,0);
   const cids=staffCids(t), nStu=cids.reduce((a,c)=>a+activeIn(c).length,0), rc=rahbarCls(id);
-  let h=`<div class="hdr" style="background:linear-gradient(135deg,${css(g1)},${css(g2)})"><div class="prof"><span class="pa" style="color:${css(fg)}">${esc(inits({fio:t.fio}))}</span><div style="min-width:0"><b>${esc(t.fio)}</b><small>${esc(ROLE[t.role]?.n||"")}${(t.yuk||[]).length?" · "+(t.yuk||[]).map(y=>esc(y.fan)).join(", "):""}</small>${t.kirgan?`<small>Ishga kirgan: ${dTxt(t.kirgan)}</small>`:""}${t.status==="ketgan"?`<small>Ishdan ketgan: ${dTxt(t.ketganDate)}</small>`:""}</div></div></div>`;
+  let h=`<div class="hdr" style="background:linear-gradient(135deg,${css(g1)},${css(g2)})"><div class="prof">${paHtml(t.foto,inits({fio:t.fio}),canAddStaff()?`data-act="fotoOpen" data-kind="stf" data-id="${id}"`:"",`color:${css(fg)}`)}<div style="min-width:0"><b>${esc(t.fio)}</b><small>${esc(ROLE[t.role]?.n||"")}${(t.yuk||[]).length?" · "+(t.yuk||[]).map(y=>esc(y.fan)).join(", "):""}</small>${t.kirgan?`<small>Ishga kirgan: ${dTxt(t.kirgan)}</small>`:""}${t.status==="ketgan"?`<small>Ishdan ketgan: ${dTxt(t.ketganDate)}</small>`:""}</div></div></div>`;
   h+=`<p class="mini" style="margin:12px 16px 6px">Shu hafta · ${cids.length} sinf · ${nStu} o'quvchi</p><div class="kp4"><div><b class="num" style="color:var(--gr)">${wl}</b><span>yo'qlama</span></div><div><b class="num" style="color:var(--vi)">${wg}</b><span>baho</span></div><div><b class="num" style="color:var(--gr)">${mine.filter(r=>r.d>0).length}</b><span>rag'bat</span></div><div><b class="num" style="color:var(--pk)">${mine.filter(r=>r.d<0).length}</b><span>hayfsan</span></div></div>`;
   if(t.role!=="komend"&&t.role!=="kuzat"||(t.yuk||[]).length){
     const rows=(t.yuk||[]).flatMap(y=>(y.cids||[]).map(cid=>`<button class="row" data-go="cls/${cid}"><span class="ic" style="background:${css(softOf(fanIc(y.fan)[1]))};color:${css(fanIc(y.fan)[1])};font-size:13px;font-weight:600;width:42px">${esc(clsName(cid))}</span><div class="mid"><b>${esc(y.fan)} · ${activeIn(cid).length} o'quvchi</b><small>${S.classes[cid]?.rahbarId===id?"Sinf rahbari ham":"Fan o'qituvchisi"}</small></div></button>`));
@@ -982,8 +1044,12 @@ function alerts(){
 VIEWS.notif=()=>{
   const tab=S.ui.nt||"wait", act=openReqs().filter(reqActionable), al=alerts();
   const tb=(k,t)=>`<button data-act="ui" data-k="nt" data-v="${k}" aria-pressed="${tab===k}">${t}</button>`;
-  let h=`<div class="tabs" style="margin-top:12px">${tb("wait",`Kutmoqda${act.length?" ("+act.length+")":""}`)}${tb("al",`Ogohlantirish${al.length?" ("+al.length+")":""}`)}${tb("all","Hammasi")}</div>`;
-  if(tab==="wait"){
+  let h=`<div class="tabs" style="margin-top:12px">${tb("wait",`Kutmoqda${act.length?" ("+act.length+")":""}`)}${tb("yoz",`Yozishma${myUnread()?" ("+myUnread()+")":""}`)}${tb("al",`Ogohlantirish${al.length?" ("+al.length+")":""}`)}${tb("all","Hammasi")}</div>`;
+  if(tab==="yoz"){
+    const mine=S.thr.filter(isAuthor), oth=S.thr.filter(t=>!isAuthor(t));
+    h+=sec("Siz yuborganlar")+thrListHtml(mine.slice(0,60));
+    if(canSeeAll()) h+=sec("Boshqa xodimlar va ota-onalar")+thrListHtml(oth.slice(0,100));
+  } else if(tab==="wait"){
     const other=openReqs().filter(r=>!reqActionable(r));
     h+=act.length?act.map(reqItem).join(""):`<div class="card" style="margin-top:12px">${emptyBox("ti-circle-check","Hozircha javob kutayotgan xabar yo'q")}</div>`;
     if(other.length) h+=`<p class="dh">Boshqalar ko'rib chiqadi</p>`+other.map(reqItem).join("");
@@ -1060,7 +1126,7 @@ VIEWS.stats=()=>{
 VIEWS.settings=()=>{
   const row=(i,c,t,s,act,soon)=>`<button class="row" ${soon?"disabled style='opacity:.5'":act}>${icBox(i,c)}<div class="mid"><b>${t}</b><small>${s}</small></div>${soon?'<span class="mini">tez orada</span>':'<i class="ti ti-chevron-right chev"></i>'}</button>`;
   const y=S.cfg.year?.name||"—", tps=cfgTypes();
-  let h=`<div class="card" style="margin-top:12px"><button class="row" data-act="previewOpen">${icBox("ti-eye","--or")}<div class="mid"><b>Sinov ko'rinishi</b><small>Ilovani o'qituvchi yoki ota-ona ko'zi bilan ko'rish</small></div><i class="ti ti-chevron-right chev"></i></button></div><p class="gh">MAKTAB</p><div class="card">
+  let h=`<div class="card" style="margin-top:12px"><button class="row" data-go="me">${imgAv(myFoto(),inits({fio:S.me.name}),"av")}<div class="mid"><b>${esc(S.me.name)}</b><small>Profil va rasm</small></div><i class="ti ti-chevron-right chev"></i></button></div><div class="card" style="margin-top:12px"><button class="row" data-act="previewOpen">${icBox("ti-eye","--or")}<div class="mid"><b>Sinov ko'rinishi</b><small>Ilovani o'qituvchi yoki ota-ona ko'zi bilan ko'rish</small></div><i class="ti ti-chevron-right chev"></i></button></div><p class="gh">MAKTAB</p><div class="card">
     ${row("ti-building-community","--or","Maktab ma'lumotlari",esc(S.cfg.name||"Nomi, telefon, manzil"),'data-act="setSchool"')}
     ${row("ti-calendar","--bl","O'quv yili",esc(y),'data-act="setYear"')}
     ${row("ti-books","--gr","Fanlar ro'yxati",fanlar().length+" fan",'data-act="setFans"')}
@@ -1078,9 +1144,9 @@ VIEWS.settings=()=>{
     ${row("ti-history","--bl","Faoliyat jurnali","Kim, qachon, nimani o'zgartirdi",'data-go="log"')}
     ${row("ti-archive","--vi","Arxiv","Ketgan o'quvchilar va xodimlar",'data-go="archive"')}
     ${row("ti-cloud-download","--bl","Zaxira nusxa","Hamma ma'lumotni faylga yuklab olish",'data-act="backup"')}
-  </div><p class="gh">SINOV</p><div class="card">
-    ${row("ti-flask","--vi","Sinov ma'lumotlarini yuklash","Hamma katakni namunaviy ma'lumot bilan to'ldirish",'data-act="demoAsk"')}
-    ${row("ti-trash","--pk","Hamma ma'lumotni o'chirish","Toza holatdan boshlash · PIN kodingiz qoladi",'data-act="wipeAsk"')}
+  </div><p class="gh">XAVFLI QISM</p><div class="card">
+    ${row("ti-trash","--pk","Ma'lumotlarni o'chirish","O'quvchi, xodim, yozuvlar o'chadi · PIN kodingiz qoladi",'data-act="wipeAsk"')}
+    ${row("ti-restore","--pk","Hammasini noldan boshlash","Hech kim qolmaydi · birinchi sozlashdan boshlanadi",'data-act="resetAsk"')}
   </div>
   <div class="btns" style="margin-bottom:6px"><button class="btn redo" data-act="logoutAsk"><i class="ti ti-logout"></i>Chiqish</button></div>
   <p class="mini" style="text-align:center;margin-top:10px">Maktab Nazorati · 1-bosqich</p>`;
@@ -1097,7 +1163,8 @@ VIEWS.set=(page)=>{
   return {bar:{t:"Qayd turlari",back:"settings"},html:h};
 };
 VIEWS.me=()=>{
-  const h=`<div class="hdr"><div class="prof"><span class="pa">${esc(inits({fio:S.me.name}))}</span><div><b>${esc(S.me.name)}</b><small>${esc(ROLE[role()]?.n||"")}</small></div></div></div>
+  const h=`<div class="hdr"><div class="prof">${paHtml(myFoto(),inits({fio:S.me.name}),'data-act="fotoOpen" data-kind="me"')}<div><b>${esc(S.me.name)}</b><small>${esc(ROLE[role()]?.n||"")}</small></div></div></div>
+  <button class="card row" style="margin-top:12px;width:calc(100% - 28px);text-align:left" data-act="fotoOpen" data-kind="me">${icBox("ti-camera","--or")}<div class="mid"><b>Profil rasmi</b><small>${myFoto()?"O'zgartirish yoki olib tashlash":"Kamera yoki galereyadan qo'yish"}</small></div><i class="ti ti-chevron-right chev"></i></button>
   <div class="card" style="margin-top:12px"><div class="li"><span>Maktab</span><b>${esc(S.cfg.name||"")}</b></div><div class="li"><span>O'quv yili</span><b>${esc(S.cfg.year?.name||"")}</b></div><div class="li"><span>Huquqlar</span><b>${esc(ROLE_DESC[role()]||"")}</b></div></div>
   <div class="btns"><button class="btn redo" data-act="logoutAsk"><i class="ti ti-logout"></i>Chiqish</button></div>`;
   return {bar:{t:"Profil",back:"home"},html:h};
@@ -1108,7 +1175,7 @@ VIEWS.archive=()=>{
   const ks=stuList().filter(s=>s.status==="ketgan").sort((a,b)=>String(b.ketganDate||"").localeCompare(String(a.ketganDate||""))), kt=staffList().filter(t=>t.status==="ketgan");
   let h=`<div class="tabs">${tb("stu",`O'quvchilar (${ks.length})`)}${tb("stf",`Xodimlar (${kt.length})`)}</div>`;
   if(tab==="stu") h+=`<div class="card" style="margin-top:10px">${ks.length?ks.map(s=>stuRow(s,{sub:`${esc(clsName(s.classId))} · ketgan ${dTxt(s.ketganDate)}${s.ketishSabab?" · "+esc(s.ketishSabab):""}`})).join(""):emptyBox("ti-archive","Arxiv bo'sh")}</div>`;
-  else h+=`<div class="card" style="margin-top:10px">${kt.length?kt.map(t=>`<button class="row" data-go="st/${t.id}">${av({fio:t.fio},t.id)}<div class="mid"><b>${esc(t.fio)}</b><small>${esc(ROLE[t.role]?.n||"")} · ketgan ${dTxt(t.ketganDate)}</small></div></button>`).join(""):emptyBox("ti-archive","Arxiv bo'sh")}</div>`;
+  else h+=`<div class="card" style="margin-top:10px">${kt.length?kt.map(t=>`<button class="row" data-go="st/${t.id}">${av(t,t.id)}<div class="mid"><b>${esc(t.fio)}</b><small>${esc(ROLE[t.role]?.n||"")} · ketgan ${dTxt(t.ketganDate)}</small></div></button>`).join(""):emptyBox("ti-archive","Arxiv bo'sh")}</div>`;
   return {bar:{t:"Arxiv",back:"settings"},html:h};
 };
 VIEWS.log=()=>{
@@ -1211,7 +1278,7 @@ SHEETS.dup=()=>{
 A.dupMerge=async()=>{ const r=S.f; try{ if(S.students[r.a]) await deleteDoc(doc(db,C.stu,r.a)); await updateDoc(doc(db,C.req,r.rid),{status:"done",doneBy:S.me.name,doneAt:Date.now()}); logAct("Takror o'quvchi o'chirildi"); closeSheet(); toast("Takror yozuv o'chirildi"); }catch(e){ failed(e); } };
 
 /* ================= records (rag'bat / hayfsan) ================= */
-A.recNew=d=>{ const sids=d.sid?[d.sid]:[]; const side=d.side||"neg"; openSheet("rec",{side,sids,type:"",d:0,note:"",notify:side==="neg"?false:true,sq:""}); };
+A.recNew=d=>{ vrReset(); const sids=d.sid?[d.sid]:[]; const side=d.side||"neg"; openSheet("rec",{side,sids,type:"",d:0,note:"",notify:side==="neg"?false:true,sq:""}); };
 SHEETS.rec=()=>{
   const f=S.f, neg=f.side!=="pos", list=neg?cfgTypes().neg:cfgTypes().pos, col=neg?"--pk":"--gr", cs=neg?"--pk-s":"--gr-s";
   const chosen=f.sids.map(id=>S.students[id]).filter(Boolean);
@@ -1229,7 +1296,8 @@ SHEETS.rec=()=>{
     <p class="lb">${neg?"Qanchalik jiddiy?":"Qancha?"}${custom?` <span style="color:var(--ink)">· tur bo'yicha ${sgn(+f.d)}%</span>`:""}</p>
     <div class="lv">${lv}</div>
     <p class="lb">Izoh <span class="mini">(ixtiyoriy)</span></p>${area("note","")}
-    <button class="row" style="padding:6px 0;border:0;min-height:44px" data-act="recNotify"><div class="mid"><b>Ota-onaga xabar berish</b><small>${neg?"O'rta va jiddiyda avtomatik yoqiladi":"Yaxshi xabar ham ota-onani xursand qiladi"}</small></div><span class="tgl" aria-pressed="${!!f.notify}"></span></button>
+    <button class="row" style="padding:6px 0;border:0;min-height:44px" data-act="recNotify"><div class="mid"><b>Ota-onaga xabar berish</b><small>${f.notify?"Yozuv ham, ovoz ham boradi · javobi sizga keladi":neg?"O'rta va jiddiyda avtomatik yoqiladi":"Yaxshi xabar ham ota-onani xursand qiladi"}</small></div><span class="tgl" aria-pressed="${!!f.notify}"></span></button>
+    ${f.notify?`<p class="lb">Ovozli izoh <span class="mini">(ixtiyoriy · ota-ona eshitadi)</span></p>${vrHtml()}`:""}
     <p class="err" id="fErr"></p>
     <button class="btn ${neg?"red":"grn"}" data-act="recSave"><i class="ti ti-check"></i>Saqlash${chosen.length>1?" · "+chosen.length+" o'quvchi":""}</button>`];
 };
@@ -1238,21 +1306,26 @@ A.recPick=d=>{ if(!S.f.sids.includes(d.sid)) S.f.sids.push(d.sid); S.f.sq=""; re
 A.recUnpick=d=>{ S.f.sids=S.f.sids.filter(x=>x!==d.sid); renderSheet(); };
 A.recType=d=>{ S.f.type=d.v; const t=typeOf(d.v); S.f.d=t?.d||0; if(S.f.side==="neg") S.f.notify=Math.abs(S.f.d)>=3; renderSheet(); };
 A.recLv=d=>{ S.f.d=+d.v; if(S.f.side==="neg") S.f.notify=Math.abs(S.f.d)>=3; renderSheet(); };
-A.recNotify=()=>{ S.f.notify=!S.f.notify; renderSheet(); };
+A.recNotify=()=>{ S.f.notify=!S.f.notify; if(!S.f.notify) vrReset(); renderSheet(); };
 A.recSave=async()=>{
   const f=S.f, ss=f.sids.map(id=>S.students[id]).filter(Boolean);
   if(!ss.length) return $("fErr").textContent="O'quvchini tanlang.";
   if(!f.type) return $("fErr").textContent="Turini tanlang.";
-  const t=typeOf(f.type), d=+f.d||t?.d||0, at=Date.now(), date=today();
+  if(VR.st==="rec"||VR.st==="busy") return $("fErr").textContent="Avval ovoz yozishni to'xtating.";
+  const t=typeOf(f.type), d=+f.d||t?.d||0, at=Date.now(), date=today(), neg=f.side!=="pos", note=(f.note||"").trim();
+  let v=null;
+  if(f.notify&&vrHas()){ const b=document.querySelector('[data-act="recSave"]'); if(b) b.disabled=true; try{ v=await voiceSave(); }catch(e){ if(b) b.disabled=false; return failed(e); } }
   const made=[];
   closeSheet();
   try{
     for(const s of ss){
-      const r=await addDoc(collection(db,C.rec),{sid:s.id,sn:fullName(s),cid:s.classId,cn:clsName(s.classId),type:f.type,tn:t?.n||f.type,d,note:(f.note||"").trim(),notify:!!f.notify,date,at,byPin:S.me.pin,byName:S.me.name,byRole:role(),byStaff:S.me.staffId||""});
-      made.push([r.id,s.id]);
+      const r=await addDoc(collection(db,C.rec),{sid:s.id,sn:fullName(s),cid:s.classId,cn:clsName(s.classId),type:f.type,tn:t?.n||f.type,d,note,notify:!!f.notify,date,at,byPin:S.me.pin,byName:S.me.name,byRole:role(),byStaff:S.me.staffId||"",voice:v?.vid||""});
+      let tid="";
+      if(f.notify){ try{ tid=await sendMsg({sid:s.id,text:note,v,topic:`${neg?"Hayfsan":"Rag'bat"}: ${t?.n||f.type}`,kind:neg?"hayfsan":"ragbat",recId:r.id,allowEmpty:true}); updateDoc(doc(db,C.rec,r.id),{thr:tid}).catch(()=>{}); }catch(e){ console.warn(e); } }
+      made.push([r.id,s.id,tid]);
       if(d) updateDoc(doc(db,C.stu,s.id),{bal:increment(d)}).catch(failed);
     }
-    toast(`Saqlandi · ${ss.length>1?ss.length+" o'quvchi, ":""}${sgn(d)}%`,()=>{ made.forEach(([rid,sid])=>{ deleteDoc(doc(db,C.rec,rid)).catch(()=>{}); if(d) updateDoc(doc(db,C.stu,sid),{bal:increment(-d)}).catch(()=>{}); }); toast("Bekor qilindi"); });
+    toast(`Saqlandi · ${ss.length>1?ss.length+" o'quvchi, ":""}${sgn(d)}%${f.notify?" · ota-onaga yuborildi":""}`,()=>{ made.forEach(([rid,sid,tid])=>{ deleteDoc(doc(db,C.rec,rid)).catch(()=>{}); if(tid) deleteDoc(doc(db,C.thr,tid)).catch(()=>{}); if(d) updateDoc(doc(db,C.stu,sid),{bal:increment(-d)}).catch(()=>{}); }); toast("Bekor qilindi"); });
   }catch(e){ failed(e); }
 };
 A.recDel=d=>{ const r=S.recs.find(x=>x.id===d.id); if(!r) return; confirmSheet("Yozuvni o'chirish",`<b>${esc(r.tn||"")}</b> · ${esc(r.sn)} · ${sgn(r.d)}%<br>O'chirilsa, foiz ham qaytariladi.`,"recDelDo","O'chirish","red",{data:{id:r.id}}); };
@@ -1625,6 +1698,7 @@ let rosterT, _rosterJ="";
 function syncRoster(){
   if(!canStu()||S.preview) return;
   clearTimeout(rosterT); rosterT=setTimeout(()=>{
+    if(!S.me||!canStu()) return;
     const l=stuList().filter(s=>s.status!=="ketgan").map(s=>[s.id,s.fam||"",s.ism||"",s.classId||"",s.tug||""]).sort((a,b)=>a[0]<b[0]?-1:1);
     const j=JSON.stringify(l); if(j===_rosterJ) return;
     if(S.rosterDoc&&JSON.stringify(S.rosterDoc.l||[])===j){ _rosterJ=j; return; }
@@ -1763,7 +1837,7 @@ function tAlerts(){
   pendingBlok().forEach(p=>out.push({i:"ti-clipboard-list",c:"--or",t:"Blok test kiritilmagan",s:`${p.fan} · ${clsName(p.cid)} · ${p.done}/${p.n}`,go:`blok/${p.cid}/${encodeURIComponent(p.fan)}`}));
   return out;
 }
-VIEWS.tnotif=()=>{ const al=tAlerts(); return {bar:{t:"Xabarlar",back:"home"},html:`<div class="card" style="margin-top:12px">${al.length?al.map(a=>`<button class="row" data-go="${a.go}">${icBox(a.i,a.c,"sm")}<div class="mid"><b>${esc(a.t)}</b><small class="wrap">${esc(a.s)}</small></div></button>`).join(""):emptyBox("ti-mood-smile","Hozircha xabar yo'q")}</div>`}; };
+VIEWS.tnotif=()=>{ const al=tAlerts(); return {bar:{t:"Xabarlar",back:"home"},html:`${sec(`Ota-onalar bilan yozishma${myUnread()?" · "+myUnread()+" yangi":""}`)}${thrListHtml(S.thr.slice(0,40))}${sec("Eslatmalar")}<div class="card">${al.length?al.map(a=>`<button class="row" data-go="${a.go}">${icBox(a.i,a.c,"sm")}<div class="mid"><b>${esc(a.t)}</b><small class="wrap">${esc(a.s)}</small></div></button>`).join(""):emptyBox("ti-mood-smile","Hozircha xabar yo'q")}</div>`}; };
 VIEWS.tcls=()=>{
   const cids=myCids();
   const rows=cids.map(cid=>S.classes[cid]).filter(Boolean).sort(clsSort).map(c=>{ const st=activeIn(c.id), dc=dayCounts(c.id,today()), g=avg5(st.flatMap(s=>stuGrades(s.id).filter(x=>x.kind!=="blok")));
@@ -1785,7 +1859,8 @@ VIEWS.tc=cid=>{
 };
 VIEWS.tme=()=>{
   const me=myStaff();
-  const h=`<div class="hdr"><div class="prof"><span class="pa">${esc(inits({fio:S.me.name}))}</span><div><b>${esc(S.me.name)}</b><small>${esc(ROLE[role()]?.n||"")}</small></div></div></div>
+  const h=`<div class="hdr"><div class="prof">${paHtml(myFoto(),inits({fio:S.me.name}),'data-act="fotoOpen" data-kind="me"')}<div><b>${esc(S.me.name)}</b><small>${esc(ROLE[role()]?.n||"")}</small></div></div></div>
+    <button class="card row" style="margin-top:12px;width:calc(100% - 28px);text-align:left" data-act="fotoOpen" data-kind="me">${icBox("ti-camera","--gr")}<div class="mid"><b>Profil rasmi</b><small>${myFoto()?"O'zgartirish yoki olib tashlash":"Kamera yoki galereyadan qo'yish"}</small></div><i class="ti ti-chevron-right chev"></i></button>
     ${sec("Dars yuklamasi")}<div class="card">${(me?.yuk||[]).flatMap(y=>(y.cids||[]).map(cid=>`<div class="row">${fanBox(y.fan)}<div class="mid"><b>${esc(y.fan)} · ${esc(clsName(cid))}</b><small>${activeIn(cid).length} o'quvchi</small></div></div>`)).join("")||emptyBox("ti-books","Yuklama yo'q")}</div>
     <div class="card" style="margin-top:12px"><div class="li"><span>Maktab</span><b>${esc(S.cfg.name||"")}</b></div><div class="li"><span>Telefon</span><b>${esc(me?.tel||"—")}</b></div></div>
     <div class="btns"><button class="btn redo" data-act="logoutAsk"><i class="ti ti-logout"></i>Chiqish</button></div>`;
@@ -1968,7 +2043,7 @@ function kidHeader(s,extra=""){
   const kids=(S.me.kids||[]).map(id=>S.students[id]).filter(Boolean);
   return `<div class="hero" style="padding-bottom:20px"><div class="row1"><p class="hi">${greet()}</p><button class="ib" data-go="pnotif" aria-label="Xabarlar"><i class="ti ti-bell"></i>${pNotifs(s).filter(n=>n.at>Date.now()-864e5).length?`<span class="bd">${pNotifs(s).filter(n=>n.at>Date.now()-864e5).length}</span>`:""}</button></div>
     ${kids.length>1?`<div class="tags">${kids.map(k=>`<button class="htag ${k.id===s.id?"w":""}" style="font-size:12px;padding:5px 12px" data-act="kidSel" data-id="${k.id}">${esc(k.ism)}</button>`).join("")}</div>`:""}
-    <div class="prof"><span class="pa">${esc(inits(s))}</span><div><b>${esc(fullName(s))}</b><small>${esc(clsName(s.classId))} sinf${extra}</small></div></div></div>`;
+    <div class="prof">${paHtml(s.foto,inits(s),"")}<div><b>${esc(fullName(s))}</b><small>${esc(clsName(s.classId))} sinf${extra}</small></div></div></div>`;
 }
 A.kidSel=d=>{ S.ui.kid=d.id; render(); };
 function pHome(){
@@ -1978,6 +2053,8 @@ function pHome(){
   const t=kidTest(s), br=t?blokResult(t,s.id,s.classId):null;
   const wkG=stuGrades(s.id).filter(g=>g.date>=wk&&g.kind!=="blok");
   let h=kidHeader(s,rahbarOf(s.classId)?` · Sinf rahbari: ${esc(staffShort(rahbarOf(s.classId)))}`:"");
+  const un=thrOf(s.id).filter(thrUnread);
+  if(un.length) h+=un.slice(0,3).map(t=>`<button class="card row newmsg" data-go="thr/${t.id}">${imgAv(avaOf(t.aPin,t.aStaff),inits({fio:t.aName}),"av")}<div class="mid"><b>Yangi xabar: ${esc(t.aName)}</b><small class="wrap">${t.lastVoice?'<i class="ti ti-microphone"></i> Ovozli xabar · ':""}${esc(t.topic||"")}</small></div><span class="udot"></span></button>`).join("");
   const tot=wAtt.c.b+wAtt.c.k+wAtt.c.y+wAtt.c.s;
   h+=`<div class="card cpad" style="margin-top:12px;border-left:4px solid var(--pk)"><p style="font-size:13.5px;font-weight:600">Bu hafta xulosasi</p><p class="mini" style="color:var(--ink);margin-top:6px;line-height:1.55">${esc(s.ism)} ${tot?`${tot} darsdan <b>${wAtt.c.b+wAtt.c.k}</b> tasida qatnashdi${wAtt.c.k?`, ${wAtt.c.k} marta kechikdi`:""}${wAtt.c.y?`, <b style="color:var(--pk)">${wAtt.c.y} ta darsda sababsiz yo'q</b>`:""}.`:"bu hafta hali yo'qlamada qayd etilmagan."} ${wr.length?`<b style="color:var(--gr)">${wr.filter(r=>r.d>0).length} ta rag'bat</b>, <b style="color:var(--pk)">${wr.filter(r=>r.d<0).length} ta hayfsan</b> oldi.`:"Intizom bo'yicha yozuv yo'q."} ${wkG.length?`Baholari: ${wkG.slice(0,4).map(g=>`${esc(g.fan)} ${g.kind==="doska"?g.v:g.v+"/"+g.q}`).join(", ")}.`:""}</p></div>`;
   h+=`<div class="kp3"><div><b class="num" style="color:var(--gr)">${mAtt.p==null?"—":mAtt.p+"%"}</b><span>Davomat · oy</span></div><div><b class="num" style="color:${lvColor(score(s))}">${Math.round(score(s))}%</b><span>Intizom</span></div><div><b class="num" style="color:var(--vi)">${br?fmt1(br.ball):"—"}</b><span>Blok test bali</span></div></div>`;
@@ -2047,13 +2124,14 @@ function pNotifs(s){
   const out=[];
   lessonsCache().filter(l=>l.kind!=="qosh"&&l.m&&l.m[s.id]==="y"&&l.date>=daysAgo(14)).forEach(l=>out.push({i:"ti-x",c:"--pk",t:"Darsda yo'q edi",s:`${s.ism} ${dShort(l.date)} kuni ${l.t} dagi ${l.fan} darsida yo'q edi.`,at:new Date(l.date+"T"+(l.t||"08:00")).getTime()}));
   [...new Set(lessonsCache().filter(l=>l.cid===s.classId&&l.date>=daysAgo(14)).map(l=>l.date))].forEach(d=>escapes(s.classId,d).filter(x=>x.sid===s.id).forEach(x=>out.push({i:"ti-run",c:"--pk",t:"Darsdan qochgan bo'lishi mumkin",s:`${s.ism} ${x.before.t} dagi darsda bor edi, ${x.at.t} dagi ${x.at.fan} darsida yo'q.`,at:new Date(d+"T"+x.at.t).getTime()+1})));
-  S.recs.filter(r=>r.sid===s.id&&(r.d>0||r.notify)).forEach(r=>out.push({i:r.d>0?"ti-thumb-up":"ti-alert-triangle",c:r.d>0?"--gr":"--pk",t:r.d>0?"Rag'bat 🌟":"Hayfsan",s:`${r.tn}${r.note?". "+r.note:""} · ${r.byName}`,at:r.at}));
+  S.recs.filter(r=>r.sid===s.id&&(r.d>0||r.notify)).forEach(r=>out.push({i:r.d>0?"ti-thumb-up":"ti-alert-triangle",c:r.d>0?"--gr":"--pk",t:r.d>0?"Rag'bat 🌟":"Hayfsan",s:`${r.tn}${r.note?". "+r.note:""} · ${r.byName}`,at:r.at,go:r.thr?"thr/"+r.thr:""}));
   const t=kidTest(s); if(t){ const r=blokResult(t,s.id,s.classId); out.push({i:"ti-trophy",c:"--vi",t:`${t.name} natijasi`,s:`${fmt1(r.ball)} / ${fmt1(r.max)} ball`,at:new Date((t.date||t.month+"-28")+"T15:00").getTime()}); }
   return out.sort((a,b)=>b.at-a.at);
 }
-VIEWS.pnotif=()=>{ const s=kid(); const l=pNotifs(s);
-  return {bar:{t:"Xabarlar",s:s?fullName(s):"",back:"home"},html:l.length?l.slice(0,60).map(n=>`<div class="item" ${n.c==="--pk"?'style="border-left:4px solid var(--pk)"':""}>${icBox(n.i,n.c)}<div class="mid"><div class="h"><b>${esc(n.t)}</b><span class="mini">${ago(n.at)}</span></div><p class="mini" style="color:var(--ink);margin-top:3px">${esc(n.s)}</p></div></div>`).join(""):`<div class="card" style="margin-top:12px">${emptyBox("ti-mood-smile","Hozircha xabar yo'q")}</div>`}; };
-VIEWS.pme=()=>({bar:{t:"Profil",back:"home"},html:`<div class="card" style="margin-top:12px"><div class="li"><span>Ism</span><b>${esc(S.me.name)}</b></div><div class="li"><span>Farzandlar</span><b>${(S.me.kids||[]).map(k=>S.students[k]).filter(Boolean).map(k=>esc(fullName(k))).join(", ")}</b></div><div class="li"><span>Maktab</span><b>${esc(S.cfg.name||"")}</b></div></div><div class="btns"><button class="btn redo" data-act="logoutAsk"><i class="ti ti-logout"></i>Chiqish</button></div>`});
+VIEWS.pnotif=()=>{ const s=kid(); const l=pNotifs(s), th=s?thrOf(s.id):[];
+  const it=n=>{ const tg=n.go?"button":"div"; return `<${tg} class="item" ${n.go?`data-go="${n.go}" style="width:calc(100% - 28px);text-align:left;${n.c==="--pk"?"border-left:4px solid var(--pk)":""}"`:n.c==="--pk"?'style="border-left:4px solid var(--pk)"':""}>${icBox(n.i,n.c)}<div class="mid"><div class="h"><b>${esc(n.t)}</b><span class="mini">${ago(n.at)}</span></div><p class="mini" style="color:var(--ink);margin-top:3px">${esc(n.s)}</p>${n.go?`<p class="mini" style="color:var(--pk);margin-top:4px;font-weight:600"><i class="ti ti-message"></i> Ochish va javob berish</p>`:""}</div></${tg}>`; };
+  return {bar:{t:"Xabarlar",s:s?fullName(s):"",back:"home"},html:`${th.length?sec("O'qituvchilar bilan yozishma")+thrListHtml(th)+sec("Voqealar"):""}${l.length?l.slice(0,60).map(it).join(""):`<div class="card" style="margin-top:12px">${emptyBox("ti-mood-smile","Hozircha xabar yo'q")}</div>`}`}; };
+VIEWS.pme=()=>({bar:{t:"Profil",back:"home"},html:`<div class="hdr"><div class="prof">${paHtml(myFoto(),inits({fio:S.me.name}),'data-act="fotoOpen" data-kind="me"')}<div><b>${esc(S.me.name)}</b><small>Ota-ona</small></div></div></div><button class="card row" style="margin-top:12px;width:calc(100% - 28px);text-align:left" data-act="fotoOpen" data-kind="me">${icBox("ti-camera","--pk")}<div class="mid"><b>Profil rasmi</b><small>${myFoto()?"O'zgartirish yoki olib tashlash":"Kamera yoki galereyadan qo'yish"}</small></div><i class="ti ti-chevron-right chev"></i></button><div class="card" style="margin-top:12px"><div class="li"><span>Ism</span><b>${esc(S.me.name)}</b></div><div class="li"><span>Farzandlar</span><b>${(S.me.kids||[]).map(k=>S.students[k]).filter(Boolean).map(k=>esc(fullName(k))).join(", ")}</b></div><div class="li"><span>Maktab</span><b>${esc(S.cfg.name||"")}</b></div></div><div class="btns"><button class="btn redo" data-act="logoutAsk"><i class="ti ti-logout"></i>Chiqish</button></div>`});
 
 /* ================= routing per role ================= */
 const HOME_RAH=VIEWS.home;
@@ -2342,7 +2420,7 @@ A.demoDo=async()=>{
   try{ let n=0; for(const ch of chunks(ops,300)){ const b=writeBatch(db); ch.forEach(([r,d])=>b.set(r,d)); await b.commit(); n+=ch.length; if(n%1500<300) toast(`Yuklanmoqda… ${Math.round(n/ops.length*100)}%`); }
     logAct("Sinov ma'lumotlari yuklandi"); toast(`Tayyor · ${stus.length} o'quvchi, ${staff.length} xodim, ${allCls.length} sinf`); go("home"); }catch(e){ failed(e); }
 };
-const _wipeCols=()=>[C.cls,C.stu,C.stf,C.rec,C.req,C.log,C.att,C.grd,C.tests,C.grp];
+const _wipeCols=()=>[C.cls,C.stu,C.stf,C.rec,C.req,C.log,C.att,C.grd,C.tests,C.grp,C.thr,C.msg,C.voice];
 A.wipeDo=async()=>{
   if(!isBoss()||norm(S.f.w)!=="o'chirish") return; closeSheet(); toast("O'chirilmoqda…");
   try{ const refs=[];
@@ -2352,6 +2430,306 @@ A.wipeDo=async()=>{
     for(const ch of chunks(refs,400)){ const b=writeBatch(db); ch.forEach(r=>b.delete(r)); await b.commit(); }
     S.logs=null; toast(`Tozalandi · ${refs.length} ta yozuv o'chirildi`); go("home");
   }catch(e){ failed(e); }
+};
+
+/* ================= VOICE · MESSAGES · PHOTOS · FULL RESET ================= */
+S.thr=[]; S.msgs={}; S.vcache={}; S.avc={}; S.myAva="";
+
+/* ---------- photos ---------- */
+const imgAv=(foto,txt,cls="",style="")=>`<span class="${cls}"${style?` style="${style}"`:""}>${foto?`<img src="${foto}" alt="">`:esc(txt)}</span>`;
+const myFoto=()=>S.me?.staffId?(S.staff[S.me.staffId]?.foto||""):(S.myAva||"");
+function avaOf(pin,staffId){
+  if(staffId&&S.staff[staffId]) return S.staff[staffId].foto||"";
+  if(!pin) return "";
+  if(pin===S.me?.pin) return myFoto();
+  if(S.avc[pin]===undefined){ S.avc[pin]=""; getDoc(doc(db,C.ava,pin)).then(d=>{ if(d.exists()&&d.data().foto){ S.avc[pin]=d.data().foto; later(); } }).catch(()=>{}); }
+  return S.avc[pin];
+}
+/* profile header circle with optional camera button */
+function paHtml(foto,txt,edit,style=""){
+  return `<span class="pa" style="${style}">${foto?`<img src="${foto}" alt="">`:esc(txt)}${edit?`<button class="cam" ${edit} aria-label="Rasm qo'yish"><i class="ti ti-camera"></i></button>`:""}</span>`;
+}
+const canFotoStu=s=>!!s&&(canStu()||teacherIsRahbarOf(s.classId));
+A.fotoOpen=d=>openSheet("foto",{kind:d.kind,id:d.id||""});
+SHEETS.foto=()=>{
+  const f=S.f, cur=f.kind==="me"?myFoto():f.kind==="stu"?S.students[f.id]?.foto:S.staff[f.id]?.foto;
+  const who=f.kind==="me"?S.me.name:f.kind==="stu"?fullName(S.students[f.id]):S.staff[f.id]?.fio;
+  return ["Profil rasmi",`
+    <div style="display:flex;align-items:center;gap:12px">${imgAv(cur,inits({fio:who}),"av xl")}<div><b style="font-weight:600">${esc(who||"")}</b><p class="mini">${cur?"Rasm qo'yilgan":"Hali rasm yo'q"}</p></div></div>
+    <label class="row fpick"><input type="file" accept="image/*" capture="user" data-foto="1" hidden>${icBox("ti-camera","--bl")}<div class="mid"><b>Kamera bilan olish</b><small>Hozir suratga tushing</small></div></label>
+    <label class="row fpick"><input type="file" accept="image/*" data-foto="1" hidden>${icBox("ti-photo","--gr")}<div class="mid"><b>Galereyadan tanlash</b><small>Telefondagi rasmlardan</small></div></label>
+    ${cur?`<button class="btn redo" data-act="fotoDel"><i class="ti ti-trash"></i>Rasmni olib tashlash</button>`:""}
+    <p class="err" id="fErr"></p>
+    <p class="mini">Rasm avtomatik kichraytiriladi va dumaloq ko'rinadi.</p>`];
+};
+async function fotoProcess(file){
+  const url=URL.createObjectURL(file);
+  try{
+    const img=new Image(); await new Promise((r,j)=>{ img.onload=r; img.onerror=j; img.src=url; });
+    const w=img.naturalWidth, h=img.naturalHeight, s=Math.min(w,h), N=160;
+    const cv=document.createElement("canvas"); cv.width=cv.height=N;
+    const ctx=cv.getContext("2d"); ctx.fillStyle="#fff"; ctx.fillRect(0,0,N,N);
+    ctx.drawImage(img,(w-s)/2,(h-s)/2,s,s,0,0,N,N);
+    return cv.toDataURL("image/jpeg",0.72);
+  } finally { URL.revokeObjectURL(url); }
+}
+async function fotoSave(foto){
+  const f=S.f;
+  if(f.kind==="stu") await updateDoc(doc(db,C.stu,f.id),{foto});
+  else if(f.kind==="stf"){ await updateDoc(doc(db,C.stf,f.id),{foto}); const p=pinOfStaff(f.id); if(p) await setDoc(doc(db,C.ava,p.pin),{foto,at:Date.now()}); }
+  else { await setDoc(doc(db,C.ava,S.me.pin),{foto,at:Date.now()}); S.myAva=foto; if(S.me.staffId&&S.staff[S.me.staffId]) await updateDoc(doc(db,C.stf,S.me.staffId),{foto}); }
+}
+document.addEventListener("change",async e=>{
+  const t=e.target; if(!t.dataset||!t.dataset.foto||!t.files||!t.files[0]) return;
+  const file=t.files[0]; t.value="";
+  if(!/^image\//.test(file.type||"image/")){ const er=$("fErr"); if(er) er.textContent="Bu rasm emas."; return; }
+  try{ toast("Rasm saqlanmoqda…"); const foto=await fotoProcess(file); await fotoSave(foto); closeSheet(); toast("Rasm qo'yildi"); render(); }
+  catch(err){ console.error(err); const er=$("fErr"); if(er) er.textContent="Rasmni o'qib bo'lmadi. Boshqa rasm tanlang."; else failed(err); }
+});
+A.fotoDel=async()=>{ try{ await fotoSave(""); closeSheet(); toast("Rasm olib tashlandi"); render(); }catch(e){ failed(e); } };
+
+/* ---------- voice recorder (one at a time) ---------- */
+const VMAX=60;
+const VR={st:"idle"};
+const fmtDur=s=>{ s=Math.max(0,Math.round(s||0)); return Math.floor(s/60)+":"+pad2(s%60); };
+function vrReset(){
+  clearInterval(VR.timer);
+  try{ if(VR.rec&&VR.rec.state!=="inactive"){ VR.rec.onstop=null; VR.rec.stop(); } }catch(e){}
+  try{ VR.stream&&VR.stream.getTracks().forEach(t=>t.stop()); }catch(e){}
+  if(VR.url) URL.revokeObjectURL(VR.url);
+  stopPlay();
+  Object.keys(VR).forEach(k=>delete VR[k]); VR.st="idle";
+}
+const vrRerender=()=>{ if(S.sheet) renderSheet(); else render(); };
+const vrHas=()=>VR.st==="done"&&!!VR.data;
+async function vrStart(){
+  if(VR.st==="rec") return;
+  vrReset();
+  if(!navigator.mediaDevices?.getUserMedia||!window.MediaRecorder){ toast("Bu telefonda ovoz yozib bo'lmaydi"); return; }
+  let stream;
+  try{ stream=await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:true,noiseSuppression:true}}); }
+  catch(e){ toast("Mikrofonga ruxsat bering"); return; }
+  const mime=["audio/mp4","audio/webm;codecs=opus","audio/webm","audio/ogg;codecs=opus"].find(m=>{ try{ return MediaRecorder.isTypeSupported(m); }catch(_){ return false; } })||"";
+  let rec; try{ rec=new MediaRecorder(stream,mime?{mimeType:mime,audioBitsPerSecond:32000}:{audioBitsPerSecond:32000}); }catch(e){ rec=new MediaRecorder(stream); }
+  Object.assign(VR,{st:"rec",stream,rec,chunks:[],t0:Date.now(),mime:rec.mimeType||mime||"audio/webm"});
+  rec.ondataavailable=ev=>{ if(ev.data&&ev.data.size) VR.chunks.push(ev.data); };
+  rec.onstop=()=>{
+    clearInterval(VR.timer); try{ VR.stream.getTracks().forEach(t=>t.stop()); }catch(e){}
+    const blob=new Blob(VR.chunks,{type:VR.mime}); VR.dur=Math.min(VMAX,(Date.now()-VR.t0)/1000);
+    if(!blob.size||VR.dur<0.8){ vrReset(); toast("Ovoz juda qisqa"); vrRerender(); return; }
+    VR.url=URL.createObjectURL(blob);
+    const fr=new FileReader(); fr.onload=()=>{ VR.data=fr.result; VR.st="done"; vrRerender(); }; fr.readAsDataURL(blob);
+  };
+  rec.start(500);
+  VR.timer=setInterval(()=>{ const s=(Date.now()-VR.t0)/1000; const el=$("vrT"); if(el) el.textContent=fmtDur(s)+" / "+fmtDur(VMAX); if(s>=VMAX) vrStop(); },250);
+  vrRerender();
+}
+function vrStop(){ if(VR.st!=="rec") return; VR.st="busy"; clearInterval(VR.timer); try{ VR.rec.stop(); }catch(e){ vrReset(); } vrRerender(); }
+A.vrStart=()=>vrStart();
+A.vrStop=()=>vrStop();
+A.vrDel=()=>{ vrReset(); vrRerender(); };
+A.vrPlay=(d,el)=>playSrc("local",VR.url,el);
+function wave(seed,n=26,col="currentColor",h=26){
+  let x=hashN(seed||"v")||7; const bars=[];
+  for(let i=0;i<n;i++){ x=(Math.imul(x,1103515245)+12345)>>>0; const v=6+((x>>>8)%(h-6)); bars.push(`<i style="height:${v}px;background:${col}"></i>`); }
+  return `<span class="wave" aria-hidden="true">${bars.join("")}</span>`;
+}
+function vrHtml(hint="Eng ko'pi 1 daqiqa"){
+  if(VR.st==="rec") return `<div class="vrec on"><span class="rdot"></span><b id="vrT" class="num">${fmtDur((Date.now()-VR.t0)/1000)} / ${fmtDur(VMAX)}</b><span class="mini" style="flex:1">Gapiring…</span><button class="btn red sm" data-act="vrStop"><i class="ti ti-player-stop-filled"></i>To'xtatish</button></div>`;
+  if(VR.st==="busy") return `<div class="vrec"><span class="mini">Tayyorlanmoqda…</span></div>`;
+  if(vrHas()) return `<div class="vbub mine"><button class="vp" data-act="vrPlay" aria-label="Eshitish"><i class="ti ti-player-play-filled"></i></button>${wave("local"+VR.t0,24)}<span class="num vd">${fmtDur(VR.dur)}</span><button class="vx" data-act="vrDel" aria-label="Ovozni o'chirish"><i class="ti ti-trash"></i></button></div>
+    <button class="vrbtn" data-act="vrStart"><i class="ti ti-microphone"></i>Qaytadan yozish</button>`;
+  return `<button class="vrbtn" data-act="vrStart"><i class="ti ti-microphone"></i>Ovoz yozish</button><p class="mini">${hint}. Bosib gapiring, yana bosib to'xtating.</p>`;
+}
+
+/* ---------- playback ---------- */
+let PL=null;
+function stopPlay(){ if(PL){ try{ PL.a.pause(); }catch(e){} PL.el?.classList.remove("on"); const i=PL.el?.querySelector("i"); if(i) i.className="ti ti-player-play-filled"; PL=null; } }
+function playSrc(key,src,el){
+  if(PL&&PL.key===key){ stopPlay(); return; }
+  stopPlay(); if(!src) return;
+  const a=new Audio(src); PL={key,a,el};
+  el?.classList.add("on"); const i=el?.querySelector("i"); if(i) i.className="ti ti-player-pause-filled";
+  a.onended=()=>{ if(PL&&PL.a===a) stopPlay(); };
+  a.play().catch(()=>{ stopPlay(); toast("Ovozni ijro etib bo'lmadi"); });
+}
+async function voiceLoad(vid){
+  if(S.vcache[vid]) return S.vcache[vid];
+  const m=await getDoc(doc(db,C.voice,vid)); if(!m.exists()) throw new Error("no voice");
+  const v=m.data(); let data=v.p0||"";
+  for(let i=1;i<(v.n||1);i++){ const p=await getDoc(doc(db,C.voice,vid+"_"+i)); data+=p.exists()?p.data().p:""; }
+  S.vcache[vid]=data; return data;
+}
+A.vPlay=async(d,el)=>{
+  if(PL&&PL.key===d.vid){ stopPlay(); return; }
+  el?.classList.add("ld");
+  try{ const src=await voiceLoad(d.vid); el?.classList.remove("ld"); playSrc(d.vid,src,el); }
+  catch(e){ el?.classList.remove("ld"); toast("Ovozni yuklab bo'lmadi"); }
+};
+async function voiceSave(){
+  if(!vrHas()) return null;
+  const data=VR.data, L=700000, parts=[];
+  for(let i=0;i<data.length;i+=L) parts.push(data.slice(i,i+L));
+  const ref=doc(collection(db,C.voice)), id=ref.id, b=writeBatch(db);
+  b.set(ref,{n:parts.length,mime:VR.mime||"",dur:Math.round(VR.dur),at:Date.now(),by:S.me.pin,p0:parts[0]});
+  parts.slice(1).forEach((p,i)=>b.set(doc(db,C.voice,id+"_"+(i+1)),{p}));
+  await b.commit();
+  S.vcache[id]=data;
+  return {vid:id,dur:Math.round(VR.dur)};
+}
+const vBub=(vid,dur,cls,who)=>`<div class="vbub ${cls}"><button class="vp" data-act="vPlay" data-vid="${vid}" aria-label="${esc(who?who+" ovozini eshitish":"Ovozli xabarni eshitish")}"><i class="ti ti-player-play-filled"></i></button>${wave(vid,24)}<span class="num vd">${fmtDur(dur)}</span></div>`;
+
+/* ---------- threads ---------- */
+const canSeeAll=()=>["admin","direktor"].includes(role());
+const staffSubFor=(t,cid)=>{
+  if(!t) return ROLE[role()]?.n||"";
+  const fans=(t.yuk||[]).filter(y=>(y.cids||[]).includes(cid)).map(y=>y.fan);
+  const rh=S.classes[cid]?.rahbarId===t.id;
+  if(fans.length) return fans.join(", ")+" o'qituvchisi"+(rh?" · sinf rahbari":"");
+  if(rh) return "Sinf rahbari";
+  return ROLE[t.role]?.n||"";
+};
+const mySub=cid=>S.me.staffId&&S.staff[S.me.staffId]?staffSubFor(S.staff[S.me.staffId],cid):(ROLE[role()]?.n||"");
+const isAuthor=t=>t&&t.aPin===S.me?.pin;
+const isParentOf=t=>role()==="ota"&&(S.me.kids||[]).includes(t?.sid);
+const thrUnread=t=>isAuthor(t)?(t.lastBy==="p"&&t.lastAt>(t.seenA||0)):isParentOf(t)?(t.lastBy==="a"&&t.lastAt>(t.seenP||0)):false;
+const myUnread=()=>S.thr.filter(thrUnread).length;
+const thrOf=sid=>S.thr.filter(t=>t.sid===sid).sort((a,b)=>b.lastAt-a.lastAt);
+const canMsg=s=>!!s&&s.status!=="ketgan"&&(isRah()||canRecord(s));
+
+async function sendMsg(o){
+  /* o: {tid?, sid, text, topic, kind, recId} — uses VR for voice */
+  const s=S.students[o.sid]; const at=Date.now();
+  const v=o.v!==undefined?o.v:await voiceSave();
+  const text=(o.text||"").trim();
+  if(!text&&!v&&!o.allowEmpty) throw {empty:true};
+  const by=role()==="ota"?"p":"a";
+  let tid=o.tid;
+  const last={lastAt:at,lastBy:by,lastText:text.slice(0,140),lastVoice:!!v,lastName:S.me.name};
+  if(!tid){
+    const r=await addDoc(collection(db,C.thr),{sid:o.sid,sn:s?fullName(s):"",cid:s?.classId||"",topic:o.topic||"Xabar",kind:o.kind||"xabar",recId:o.recId||"",aPin:S.me.pin,aName:S.me.name,aSub:mySub(s?.classId),aStaff:S.me.staffId||"",aRole:role(),at,seenA:at,seenP:0,n:1,...last});
+    tid=r.id;
+  } else {
+    await updateDoc(doc(db,C.thr,tid),{...last,n:increment(1),...(by==="p"?{seenP:at}:{seenA:at})});
+  }
+  if(text||v) await addDoc(collection(db,C.msg),{tid,sid:o.sid,by,pin:S.me.pin,name:S.me.name,staffId:S.me.staffId||"",text,vid:v?.vid||"",dur:v?.dur||0,at});
+  return tid;
+}
+
+/* reply / new message sheet */
+A.msgNew=d=>{ vrReset(); openSheet("msg",{sid:d.sid,tid:"",text:""}); };
+A.msgReply=d=>{ vrReset(); openSheet("msg",{sid:d.sid,tid:d.tid,text:""}); if(d.mic) vrStart(); };
+SHEETS.msg=()=>{
+  const f=S.f, t=f.tid?S.thr.find(x=>x.id===f.tid):null, s=S.students[f.sid];
+  const to=role()==="ota"?(t?.aName||""):`${s?fullName(s):""} ota-onasi`;
+  return [t?"Javob yozish":"Ota-onaga xabar",`
+    <div class="note" style="background:${role()==="ota"?"var(--pk-ss)":"var(--gr-ss)"};margin:0"><i class="ti ti-send" style="color:var(--role)"></i><div>Kimga: <b>${esc(to)}</b>${role()==="ota"?"<br>Javobingiz faqat shu kishiga boradi":""}</div></div>
+    <p class="lb">Yozib</p>${area("text","Xabar matni…")}
+    <p class="lb">Yoki ovoz bilan</p>${vrHtml()}
+    <p class="err" id="fErr"></p>
+    <button class="btn" data-act="msgSend" ${VR.st==="rec"||VR.st==="busy"?"disabled":""}><i class="ti ti-send"></i>Yuborish</button>`];
+};
+A.msgSend=async()=>{
+  const f=S.f;
+  if(!(f.text||"").trim()&&!vrHas()){ $("fErr").textContent="Xabar yozing yoki ovoz yozing."; return; }
+  const btn=document.querySelector('[data-act="msgSend"]'); if(btn) btn.disabled=true;
+  try{
+    const tid=await sendMsg({tid:f.tid,sid:f.sid,text:f.text,topic:"Xabar",kind:"xabar"});
+    vrReset(); closeSheet(); toast("Yuborildi");
+    if(!f.tid) go("thr",tid);
+  }catch(e){ if(btn) btn.disabled=false; if(e?.empty) $("fErr").textContent="Xabar yozing yoki ovoz yozing."; else failed(e); }
+};
+
+/* thread list item */
+function thrItem(t){
+  const un=thrUnread(t), par=role()==="ota", s=S.students[t.sid];
+  const title=par?t.aName:`${t.sn} · ${clsName(t.cid)}`;
+  const sub=par?`${t.aSub?t.aSub+" · ":""}${t.topic||"Xabar"}`:isAuthor(t)?(t.topic||"Xabar"):`${t.aName} ⇄ ota-ona · ${t.topic||"Xabar"}`;
+  const lw=t.lastBy==="p"?(par?"Siz: ":"Ota-ona: "):(par?"":isAuthor(t)?"Siz: ":"");
+  const last=`${esc(lw)}${t.lastVoice?'<i class="ti ti-microphone" style="color:var(--pk)"></i> Ovozli xabar'+(t.lastText?" · ":""):""}${esc(t.lastText||"")}`;
+  const foto=par?avaOf(t.aPin,t.aStaff):(s?.foto||"");
+  return `<button class="row thr ${un?"un":""}" data-go="thr/${t.id}">${imgAv(foto,inits({fio:par?t.aName:t.sn}),"av")}<div class="mid"><b>${esc(title)}</b><small class="wrap">${esc(sub)}</small><small class="wrap" style="color:var(--ink)">${last}</small></div><div class="rt"><span class="mini">${ago(t.lastAt)}</span>${un?'<span class="udot"></span>':""}</div></button>`;
+}
+const thrListHtml=l=>l.length?`<div class="card">${l.map(t=>thrItem(t)).join("")}</div>`:`<div class="card">${emptyBox("ti-messages","Hozircha yozishma yo'q")}</div>`;
+
+/* thread page */
+VIEWS.thr=id=>{
+  const t=S.thr.find(x=>x.id===id);
+  if(!t) return {bar:{t:"Yozishma",back:"notif"},html:`<div class="card" style="margin-top:12px">${emptyBox("ti-messages",S.loaded.thr?"Yozishma topilmadi":"Yuklanmoqda…")}</div>`};
+  if(S._msgTid!==id){ S._msgUn&&S._msgUn(); S._msgTid=id; S._msgUn=onSnapshot(query(collection(db,C.msg),where("tid","==",id)),q=>{ S.msgs[id]=q.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>a.at-b.at); later(); },e=>console.warn(e)); }
+  if(thrUnread(t)&&!S.preview){ const k=isAuthor(t)?"seenA":"seenP"; t[k]=Date.now(); updateDoc(doc(db,C.thr,id),{[k]:t[k]}).catch(()=>{}); }
+  const s=S.students[t.sid], ms=S.msgs[id], par=role()==="ota";
+  const mineSide=m=>par?m.by==="p":isAuthor(t)?m.by==="a":m.by==="p";
+  const aFoto=avaOf(t.aPin,t.aStaff);
+  let h=`<div class="card cpad" style="margin-top:12px">
+    <div style="display:flex;justify-content:space-between;align-items:center"><span class="mini">Yubordi:</span><span class="tg" style="background:${t.kind==="hayfsan"?"var(--pk-s)":t.kind==="ragbat"?"var(--gr-s)":"var(--bl-s)"};color:${t.kind==="hayfsan"?"var(--pk)":t.kind==="ragbat"?"var(--gr)":"var(--bl)"}">${esc(t.kind==="hayfsan"?"Hayfsan":t.kind==="ragbat"?"Rag'bat":"Xabar")}</span></div>
+    <div class="sender">${imgAv(aFoto,inits({fio:t.aName}),"av xl")}<div><b>${esc(t.aName)}</b><small>${esc(t.aSub||"")}${t.cid?" · "+esc(clsName(t.cid)):""}</small></div></div>
+    <p style="font-size:13.5px;margin-top:10px"><b style="font-weight:600">${esc(t.topic||"Xabar")}</b>${par?"":` · <button style="color:var(--bl);font-weight:600" data-go="stu/${t.sid}">${esc(t.sn)}</button>`}</p></div>`;
+  h+=`<div class="chat">`;
+  if(!ms) h+=`<p class="mini" style="text-align:center;padding:12px">Yuklanmoqda…</p>`;
+  else ms.forEach(m=>{
+    const mine=mineSide(m), cls=m.by==="p"?"p":"a";
+    const foto=avaOf(m.pin,m.staffId);
+    h+=`<div class="msg ${mine?"me":""} ${cls}">${mine?"":imgAv(foto,inits({fio:m.name}),"av sm")}<div class="mb"><span class="mn">${esc(mine?"Siz":m.name)}${m.by==="p"&&!mine?" · ota-ona":""}</span>${m.vid?vBub(m.vid,m.dur,cls,m.name):""}${m.text?`<div class="tx">${esc(m.text)}</div>`:""}<span class="mt">${ago(m.at)}</span></div></div>`;
+  });
+  h+=`</div>`;
+  const can=isAuthor(t)||isParentOf(t);
+  if(can) h+=`<p class="mini" style="text-align:center;margin:10px 16px 0">${par?`Javobingiz faqat ${esc(t.aName)}ga boradi`:"Javob faqat ota-onaga boradi"}</p><div class="btn2" style="margin:8px 14px 0;grid-template-columns:1fr auto"><button class="btn" data-act="msgReply" data-tid="${t.id}" data-sid="${t.sid}"><i class="ti ti-message"></i>Javob yozish</button><button class="btn mic" data-act="msgReply" data-tid="${t.id}" data-sid="${t.sid}" data-mic="1" aria-label="Ovoz bilan javob"><i class="ti ti-microphone"></i></button></div>`;
+  else h+=`<p class="mini" style="text-align:center;margin:12px 16px 0">Siz kuzatasiz. Yozishma ${esc(t.aName)} va ota-ona o'rtasida.</p>`;
+  return {bar:{t:"Yozishma",s:par?"":t.sn,back:"notif"},html:h};
+};
+
+/* ---------- live data: threads + my avatar ---------- */
+const _enterApp0=enterApp;
+enterApp=function(){
+  S.thr=[]; S._thrParts={}; if(S._msgUn){ S._msgUn(); S._msgUn=null; S._msgTid=""; }
+  _enterApp0();
+  const sub=(ref,fn)=>unsub.push(onSnapshot(ref,fn,e=>console.warn(e)));
+  const r=role(), put=(i,s)=>{ S._thrParts[i]=s.docs.map(d=>({id:d.id,...d.data()})); S.thr=[].concat(...Object.values(S._thrParts)).sort((a,b)=>b.lastAt-a.lastAt); S.loaded.thr=1; later(); };
+  if(canSeeAll()) sub(query(collection(db,C.thr),orderBy("lastAt","desc"),limit(300)),s=>put(0,s));
+  else if(r==="ota"){ const ks=S.me.kids||[]; if(!ks.length) S.loaded.thr=1; chunks(ks).forEach((ids,i)=>sub(query(collection(db,C.thr),where("sid","in",ids)),s=>put(i,s))); }
+  else sub(query(collection(db,C.thr),where("aPin","==",S.me.pin)),s=>put(0,s));
+  if(!S.me.staffId) sub(doc(db,C.ava,S.me.pin),d=>{ S.myAva=d.exists()?(d.data().foto||""):""; later(); });
+};
+ALLOW.rah.push("thr"); ALLOW.oqit.push("thr"); ALLOW.ota.push("thr"); ALLOW.other.push("thr");
+SECTION.thr="notif";
+const _closeSheet0=closeSheet;
+closeSheet=function(){ if(VR.st!=="idle") vrReset(); _closeSheet0(); };
+
+/* ---------- full reset (boss) ---------- */
+A.resetAsk=()=>{ if(!isBoss()||S.preview) return; openSheet("reset",{w:""}); };
+SHEETS.reset=()=>["Hammasini noldan boshlash",`
+  <p style="font-size:14px">Ilova birinchi kungidek top-toza bo'ladi. Hech kim ro'yxatda qolmaydi. Quyidagilar <b>butunlay</b> o'chadi:</p>
+  <div class="rlist">${["O'quvchilar","Sinflar","Xodimlar","Barcha PIN kodlar (sizniki ham)","Rag'bat va hayfsanlar","Davomat","Baholar va testlar","So'rovlar, jurnal","Yozishma va ovozlar","Rasmlar"].map(x=>`<span>${x}</span>`).join("")}</div>
+  <div class="note" style="background:var(--or-ss);margin:0"><i class="ti ti-info-circle" style="color:var(--or)"></i><div>Keyin ilova "Birinchi sozlash" oynasini ochadi — maktab nomi va o'zingizning yangi PIN kodingizni qayta kiritasiz.</div></div>
+  <p class="lb">Tasdiqlash uchun <b>NOLDAN</b> deb yozing</p>${inp("w","NOLDAN",'autocomplete="off" autocapitalize="characters"')}
+  <p class="err" id="fErr"></p>
+  <button class="btn red" data-act="resetDo"><i class="ti ti-trash"></i>Hammasini o'chirish</button>`];
+A.resetDo=async()=>{
+  if(!isBoss()||S.preview) return;
+  if(norm(S.f.w)!=="noldan"){ $("fErr").textContent="NOLDAN deb yozing."; return; }
+  const btn=document.querySelector('[data-act="resetDo"]'); if(btn){ btn.disabled=true; btn.innerHTML='<i class="ti ti-loader"></i>O\'chirilmoqda…'; }
+  try{
+    clearTimeout(rosterT); unsub.forEach(u=>u()); unsub=[]; (S._dyn||[]).forEach(u=>u()); S._dyn=[]; S._dynKey="";
+    if(S._msgUn){ S._msgUn(); S._msgUn=null; S._msgTid=""; }
+    const cols=Object.values(C).filter(c=>c!==C.meta&&c!==C.sess&&c!==C.pins);
+    let n=0;
+    for(const col of cols){
+      const s=await getDocs(collection(db,col)); const refs=s.docs.map(d=>d.ref);
+      for(const ch of chunks(refs,400)){ const b=writeBatch(db); ch.forEach(r=>b.delete(r)); await b.commit(); n+=ch.length; }
+    }
+    /* last: meta, pins, sessions (so the app can't be used half-deleted) */
+    for(const col of [C.meta,C.pins,C.sess]){
+      const s=await getDocs(collection(db,col)); const refs=s.docs.map(d=>d.ref);
+      for(const ch of chunks(refs,400)){ const b=writeBatch(db); ch.forEach(r=>b.delete(r)); await b.commit(); n+=ch.length; }
+    }
+    lsSet(null); S.me=null; S.real=null; S.preview=false;
+    Object.assign(S,{classes:{},students:{},staff:{},recs:[],reqs:[],pins:[],thr:[],msgs:{},logs:null,route:["home"],ui:{},cfg:{}});
+    closeSheet(); history.replaceState(null,"",location.pathname+location.search);
+    document.body.className="";
+    ["suSchool","suName","suPin"].forEach(k=>{ const el=$(k); if(el) el.value=""; }); const sb=$("suBtn"); if(sb) sb.disabled=false;
+    show("scrSetup"); toast(`Tozalandi · ${n} ta yozuv o'chirildi`);
+  }catch(e){ if(btn){ btn.disabled=false; btn.innerHTML='<i class="ti ti-trash"></i>Hammasini o\'chirish'; } failed(e); }
 };
 
 </script>
