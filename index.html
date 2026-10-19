@@ -1080,6 +1080,9 @@ VIEWS.settings=()=>{
     ${row("ti-history","--bl","Faoliyat jurnali","Kim, qachon, nimani o'zgartirdi",'data-go="log"')}
     ${row("ti-archive","--vi","Arxiv","Ketgan o'quvchilar va xodimlar",'data-go="archive"')}
     ${row("ti-cloud-download","--bl","Zaxira nusxa","Hamma ma'lumotni faylga yuklab olish",'data-act="backup"')}
+  </div><p class="gh">SINOV</p><div class="card">
+    ${row("ti-flask","--vi","Sinov ma'lumotlarini yuklash","Hamma katakni namunaviy ma'lumot bilan to'ldirish",'data-act="demoAsk"')}
+    ${row("ti-trash","--pk","Hamma ma'lumotni o'chirish","Toza holatdan boshlash · PIN kodingiz qoladi",'data-act="wipeAsk"')}
   </div>
   <div class="btns" style="margin-bottom:6px"><button class="btn redo" data-act="logoutAsk"><i class="ti ti-logout"></i>Chiqish</button></div>
   <p class="mini" style="text-align:center;margin-top:10px">Maktab Nazorati · 1-bosqich</p>`;
@@ -1473,6 +1476,75 @@ A.typeSave=()=>{ const f=S.f, n=(f.n||"").trim(), v=clamp(+f.d||1,1,20); if(!n) 
   if(f.i>=0){ Object.assign(t[f.side][f.i],{n,d}); } else t[f.side].push({id:"t"+Date.now().toString(36),n,d,i:f.side==="neg"?"ti-alert-triangle":"ti-thumb-up"});
   S.cfg.types=t; saveCfg({types:t}); };
 A.typeHide=()=>{ const t=typesCopy(); t[S.f.side][S.f.i].off=true; S.cfg.types=t; saveCfg({types:t},"Ro'yxatdan olindi"); };
+/* ================= demo data / wipe ================= */
+const BOY=["Kamron","Jasur","Otabek","Sardor","Diyor","Jahongir","Rustam","Bekzod","Sanjar","Asror","Ulug'bek","Samandar","Ibrohim","Muhammadali","Abdulloh","Azizbek","Doniyor","Shohruh","Javohir","Islom","Behruz","Firdavs","Temur","Nodirbek"];
+const GIRL=["Nilufar","Madina","Sevinch","Mohinur","Dilnoza","Zarina","Shahzoda","Sabina","Malika","Gulnoza","Mubina","Oysha","Robiya","Durdona","Muslima","Asal","Kumush","Marjona","Iroda","Laylo"];
+const FAM=["Aliyev","Karimov","Rahimov","Yusupov","Tursunov","Mirzayev","Azimov","Bakirov","Ergashev","Islomov","Hamroyev","Qosimov","Nazarov","Sobirov","Toshev","Jo'rayev","Saidov","Botirov","G'aniyev","Nurmatov","Usmonov","Xolmatov","Ochilov","Raximov","Sharipov","Fayziyev"];
+const OTA_I=["Anvar","Bahodir","Akbar","Sherzod","Rustam","Farhod","Jamshid","Ilhom","Ulug'bek","Nodir","Shavkat","Botir","Zafar","Alisher"];
+const ADDR=["Qorako'l t., Mirzaqal'a","Qorako'l t., Jig'achi","Qorako'l sh., Mustaqillik ko'ch.","Olot t., markaz","Qorako'l t., Darg'ali","Buxoro sh., Navoiy ko'ch.","Qorako'l t., Sayyot"];
+const rnd=a=>a[Math.floor(Math.random()*a.length)], rint=(a,b)=>a+Math.floor(Math.random()*(b-a+1));
+const femOf=f=>f.endsWith("ov")||f.endsWith("ev")||f.endsWith("yev")?f+"a":f;
+const telR=()=>`+998 ${rnd(["90","91","93","94","97","99","88"])} ${rint(100,999)} ${rint(10,99)} ${rint(10,99)}`;
+A.demoAsk=()=>confirmSheet("Sinov ma'lumotlari","24 ta sinf, 30 ta xodim, ~380 o'quvchi, 600+ rag'bat/hayfsan, ota-ona PIN kodlari, so'rovlar va arxiv namunasi yuklanadi.<br><br>Keyin <b>\"Hamma ma'lumotni o'chirish\"</b> bilan tozalaysiz.","demoDo","Yuklash","grn");
+A.demoDo=async()=>{
+  if(!isBoss()) return; closeSheet(); toast("Yuklanmoqda… 20–40 soniya kuting");
+  const ops=[], put=(col,id,data)=>{ const r=id?doc(db,col,id):doc(collection(db,col)); ops.push([r,data]); return r.id; };
+  const now=Date.now(), dAgo=n=>dk(now-n*864e5), year=S.cfg.year?.id||"";
+  // classes
+  const cls=[]; [[1,"ABV"],[2,"ABV"],[3,"ABV"],[4,"ABV"],[5,"AB"],[6,"AB"],[7,"AB"],[8,"AB"],[9,"AB"],[10,"A"],[11,"A"]].forEach(([g,ls])=>[...ls].forEach(l=>{ const name=`${g}-${l}`; if(clsList().some(c=>c.name===name)) return; const id=put(C.cls,null,{grade:g,letter:l,name,rahbarId:"",year,at:now,demo:true}); cls.push({id,grade:g,name}); }));
+  const allCls=[...clsList().map(c=>({id:c.id,grade:c.grade,name:c.name})),...cls];
+  // staff
+  const T=[["Karimov Baxtiyor","direktor"],["Tursunov Bobur","zavuch",[["Tarix",[9,10,11]]]],["Rahimova Nodira","kuzat",null,"Kotiba",["stu","stf","xls"]],["Fayziyev Olim","kuzat",null,"Ta'sischi"],
+    ["Nazarova Gulnora","oqit",[["Ona tili",[1]],["O'qish",[1]]]],["Olimova Sevara","oqit",[["Ona tili",[2]],["O'qish",[2]]]],["Sharipova Muqaddas","oqit",[["Ona tili",[3,4]],["O'qish",[3,4]]]],
+    ["Yusupov Akmal","oqit",[["Matematika",[1,2,3]]]],["Qodirova Mohira","oqit",[["Matematika",[4,5,6]]]],["Usmonov Jasur","oqit",[["Matematika",[7,8,9,10,11]]]],
+    ["Karimova Dilnoza","oqit",[["Ingliz tili",[1,2,3,4]]]],["Ochilova Zebo","oqit",[["Ingliz tili",[5,6,7,8,9,10,11]]]],["Petrova Olga","oqit",[["Rus tili",[2,3,4,5,6]]]],["Xolmatova Barno","oqit",[["Rus tili",[7,8,9,10,11]]]],
+    ["Ergashev Sanjar","oqit",[["Fizika",[7,8,9,10,11]]]],["Hamroyeva Nigora","oqit",[["Kimyo",[8,9,10,11]],["Biologiya",[7,8,9]]]],["Islomov Bekzod","oqit",[["Informatika",[5,6,7,8,9,10,11]]]],["Sobirova Lola","oqit",[["Tabiiy fanlar",[1,2,3,4]],["Geografiya",[5,6,7]]]],
+    ["Raximov Shoxrux","oqit",[["Jismoniy tarbiya",[1,2,3,4,5,6,7,8,9,10,11]]]],["Jo'rayeva Feruza","oqit",[["Ona tili",[5,6,7]]]],["Botirova Shahnoza","oqit",[["Ona tili",[8,9,10,11]]]],["Nurmatov Ilhom","oqit",[["Matematika",[5,6]]]],["Toshev Alisher","oqit",[["Tarix",[5,6,7,8]]]],["Qosimova Dildora","oqit",[["Ingliz tili",[1,2]]]],["Azimova Gulchehra","oqit",[["Tasviriy san'at",[1,2,3,4,5]]]],["Sharipov Rustam","oqit",[["Geografiya",[8,9,10,11]]]],["G'aniyeva Malika","oqit",[["Biologiya",[10,11]]]],["Saidov Nodir","komend"],["Xolova Zarina","komend"],["Rajabov Sherzod","komend"]];
+  const staff=T.map(([fio,role,yk,lav,perms])=>{ const yuk=(yk||[]).map(([fan,gs])=>({fan,cids:allCls.filter(c=>gs.includes(c.grade)).map(c=>c.id)})).filter(y=>y.cids.length); const id=put(C.stf,null,{fio,tel:telR(),role,lav:lav||"",kirgan:dAgo(rint(60,1500)),yuk,perms:perms||[],status:"faol",at:now,byName:S.me.name,demo:true}); return {id,fio,role,yuk,perms:perms||[]}; });
+  const gone=put(C.stf,null,{fio:"Bozorov Anvar",tel:telR(),role:"oqit",kirgan:dAgo(900),yuk:[],status:"ketgan",ketganDate:dAgo(40),at:now,demo:true});
+  // rahbars: teachers covering class
+  const teach=staff.filter(t=>t.role==="oqit");
+  allCls.forEach((c,i)=>{ const cand=teach.filter(t=>t.yuk.some(y=>y.cids.includes(c.id))); const used=new Set(allCls.map(x=>x.rahbar).filter(Boolean)); const r=cand.find(t=>!used.has(t.id))||teach.find(t=>!used.has(t.id))||null; if(r&&i<allCls.length-1) c.rahbar=r.id; });
+  allCls.forEach(c=>{ const ex=ops.find(([r])=>r.id===c.id); if(ex) ex[1].rahbarId=c.rahbar||""; else if(c.rahbar) ops.push([doc(db,C.cls,c.id),{...S.classes[c.id],rahbarId:c.rahbar}]); });
+  // pins for staff (one left without pin → request)
+  staff.forEach((t,i)=>{ if(t.fio==="Raximov Shoxrux"){ put(C.req,null,{type:"pin",staffId:t.id,name:t.fio,role:t.role,status:"open",at:now-36e5,byPin:"demo",byName:"Karimov Baxtiyor"}); return; } put(C.pins,genPinX(),{name:t.fio,role:t.role,staffId:t.id,perms:t.perms,at:now-rint(1,30)*864e5,...(i%3?{last:now-rint(0,96)*36e5}:{})}); });
+  // students + records
+  const types=cfgTypes(); const stus=[];
+  allCls.forEach(c=>{ const n=rint(13,19); for(let k=0;k<n;k++){ const boy=Math.random()<.52, fam0=rnd(FAM), fam=boy?fam0:femOf(fam0), ism=boy?rnd(BOY):rnd(GIRL); const by=2026-6-c.grade-rint(0,1);
+    const s={fam,ism,tug:`${by}-${pad2(rint(1,12))}-${pad2(rint(1,28))}`,jins:boy?"o":"q",classId:c.id,status:"faol",bal:0,qabul:Math.random()<.03?dAgo(rint(0,6)):dAgo(rint(40,1200)),ota:fam0+" "+rnd(OTA_I),tel:telR(),manzil:rnd(ADDR),izoh:Math.random()<.1?rnd(["Allergiyasi bor (yong'oq)","Ko'zoynak taqadi","Olimpiadaga tayyorlanmoqda","Yotoqxonada yashaydi"]):"",at:now-rint(1,200)*864e5,byPin:S.me.pin,byName:S.me.name,year,demo:true};
+    stus.push({s,c}); } });
+  const recWriters=[...teach,...staff.filter(t=>t.role==="komend"||t.role==="zavuch")];
+  stus.forEach(({s,c},i)=>{ const rr=Math.random(), bad=rr<.04, mid=!bad&&rr<.16, nRec=bad?rint(26,34):mid?rint(6,11):rint(0,4); let bal=0; const id=doc(collection(db,C.stu)).id; s._id=id;
+    for(let k=0;k<nRec;k++){ const neg=bad?Math.random()<.95:mid?Math.random()<.8:Math.random()<.5; const t=rnd(neg?types.neg:types.pos); const w=rnd(recWriters); const days=rint(0,58); const at=now-days*864e5-rint(0,8)*36e5;
+      bal+=t.d; ops.push([doc(collection(db,C.rec)),{sid:id,sn:s.fam+" "+s.ism,cid:c.id,cn:c.name,type:t.id,tn:t.n,d:t.d,note:Math.random()<.2?rnd(["Ikki marta ogohlantirildi","Ota-onasi bilan gaplashildi","Sinf oldida","Yaxshi namuna"]):"",notify:Math.abs(t.d)>=3,date:dk(at),at,byPin:"demo",byName:w.fio,byRole:w.role,byStaff:w.id}]); }
+    s.bal=bal;
+    if(i%97===5){ s.status="ketgan"; s.ketganDate=dAgo(rint(5,60)); s.ketishSabab=rnd(LEAVE); }
+    if(i%131===7){ s.status="ketmoqda"; s.ketishSabab=rnd(LEAVE); ops.push([doc(collection(db,C.req)),{type:"ketish",sid:id,sn:s.fam+" "+s.ism,cid:c.id,cn:c.name,sabab:s.ketishSabab,status:"open",at:now-rint(1,48)*36e5,byPin:"demo",byName:staff.find(t=>t.id===c.rahbar)?.fio||"Tursunov Bobur"}]); }
+    ops.push([doc(db,C.stu,id),s]);
+    if(i%9===0) ops.push([doc(db,C.pins,genPinX()),{name:s.ota,role:"ota",kids:[id],at:now-rint(1,20)*864e5,...(i%2?{last:now-rint(1,72)*36e5}:{})}]);
+  });
+  // duplicate pair
+  const d0=stus[3]; if(d0){ const id2=doc(collection(db,C.stu)).id; const c2=allCls[(allCls.indexOf(d0.c)+1)%allCls.length]; ops.push([doc(db,C.stu,id2),{...d0.s,classId:c2.id,qabul:dAgo(1),at:now-36e5,byName:"Rahimova Nodira",demo:true}]); ops.push([doc(collection(db,C.req)),{type:"dup",sid:id2,sid2:d0.s._id,sn:d0.s.fam+" "+d0.s.ism,cn:c2.name,status:"open",at:now-36e5,byPin:"demo",byName:"Rahimova Nodira"}]); }
+  stus.forEach(x=>delete x.s._id);
+  ["Sinflar ochildi","Xodimlar qo'shildi","O'quvchilar kiritildi"].forEach((t,i)=>ops.push([doc(collection(db,C.log)),{text:"Sinov: "+t,by:S.me.name,role:"admin",at:now-(3-i)*6e4}]));
+  try{ for(const ch of chunks(ops,400)){ const b=writeBatch(db); ch.forEach(([r,d])=>b.set(r,d)); await b.commit(); }
+    logAct("Sinov ma'lumotlari yuklandi"); toast(`Tayyor · ${stus.length} o'quvchi, ${staff.length} xodim, ${allCls.length} sinf`); go("home"); }catch(e){ failed(e); }
+};
+const _usedPins=new Set();
+function genPinX(){ for(let i=0;i<1000;i++){ const p=String(Math.floor(100000+Math.random()*900000)); if(!_usedPins.has(p)&&!S.pins.some(x=>x.pin===p)){ _usedPins.add(p); return p; } } return String(Date.now()).slice(-6); }
+A.wipeAsk=()=>openSheet("wipe",{w:""});
+SHEETS.wipe=()=>["Hamma ma'lumotni o'chirish",`<div class="note" style="margin:0;background:var(--pk-s)"><i class="ti ti-alert-triangle" style="color:var(--pk)"></i><div><b>Diqqat! Buni qaytarib bo'lmaydi.</b>Hamma sinflar, xodimlar, o'quvchilar, yozuvlar, so'rovlar va boshqa PIN kodlar o'chiriladi. Faqat sizning PIN kodingiz va sozlamalar qoladi.</div></div>
+  <p class="lb">Tasdiqlash uchun katta harflar bilan <b style="color:var(--pk)">O'CHIRISH</b> deb yozing</p>${inp("w","",'autocomplete="off" autocapitalize="characters" data-live="1"')}
+  <button class="btn red" data-act="wipeDo" ${norm(S.f.w)==="o'chirish"?"":"disabled"}><i class="ti ti-trash"></i>Hammasini o'chirish</button>`];
+A.wipeDo=async()=>{
+  if(!isBoss()||norm(S.f.w)!=="o'chirish") return; closeSheet(); toast("O'chirilmoqda…");
+  try{ const refs=[];
+    for(const col of [C.cls,C.stu,C.stf,C.rec,C.req,C.log]){ const s=await getDocs(collection(db,col)); s.docs.forEach(d=>refs.push(doc(db,col,d.id))); }
+    const ps=await getDocs(collection(db,C.pins)); ps.docs.forEach(d=>{ if(d.data().role!=="admin") refs.push(doc(db,C.pins,d.id)); });
+    for(const ch of chunks(refs,400)){ const b=writeBatch(db); ch.forEach(r=>b.delete(r)); await b.commit(); }
+    S.logs=null; toast(`Tozalandi · ${refs.length} ta yozuv o'chirildi`); go("home");
+  }catch(e){ failed(e); }
+};
 A.backup=()=>{
   const data={app:"Maktab Nazorati",exportedAt:new Date().toISOString(),school:S.cfg,classes:Object.values(S.classes),students:stuList(),staff:staffList(),records:S.recs,requests:S.reqs,pins:S.pins};
   const blob=new Blob([JSON.stringify(data,null,1)],{type:"application/json"}), a=document.createElement("a");
