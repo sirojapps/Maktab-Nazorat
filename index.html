@@ -444,7 +444,7 @@ body.r-oqit,body.r-komend,body.r-ota{--role:#56677d;--role2:#66778c;--role-s:#e6
     <h2>Kim sifatida kirasiz?</h2>
     <button class="rb" data-who="ota"><span class="ic" style="background:var(--pk-s);color:var(--pk)"><i class="ti ti-heart-handshake"></i></span><span><b>Ota-ona</b><small>Farzandim haqida</small></span><i class="ti ti-chevron-right"></i></button>
     <button class="rb" data-who="oqit"><span class="ic" style="background:var(--gr-s);color:var(--gr)"><i class="ti ti-chalkboard"></i></span><span><b>O'qituvchi</b><small>Sinfim va darslarim</small></span><i class="ti ti-chevron-right"></i></button>
-    <button class="rb" data-who="admin"><span class="ic" style="background:var(--or-s);color:var(--or)"><i class="ti ti-building-community"></i></span><span><b>Maktab rahbariyati</b><small>Butun maktab · komendantlar ham shu yerdan</small></span><i class="ti ti-chevron-right"></i></button>
+    <button class="rb" data-who="admin"><span class="ic" style="background:var(--or-s);color:var(--or)"><i class="ti ti-building-community"></i></span><span><b>Maktab rahbariyati</b><small>Rahbariyat, xodimlar va komendantlar</small></span><i class="ti ti-chevron-right"></i></button>
   </div>
   <p class="sl">Bilim — kelajak poydevori</p>
 </div>
@@ -475,7 +475,7 @@ document.addEventListener("click",function(e){ if(e.target&&e.target.id==="stall
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager, collection, doc, getDoc, getDocs, getDocFromServer, setDoc, updateDoc, deleteDoc, addDoc, onSnapshot, query, where, orderBy, limit, writeBatch, increment, deleteField } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager, collection, doc, getDoc, getDocs, getDocFromServer, setDoc, updateDoc, deleteDoc, addDoc, onSnapshot, query, where, orderBy, limit, writeBatch, increment, deleteField, arrayUnion } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 const fb = initializeApp({
   apiKey: "AIzaSyBiIO9oJa4C5Md0bK-l2iqUTrPobyzNWFE",
@@ -3132,6 +3132,274 @@ A.plReload=()=>{ S.pinlog=null; render(); };
 ALLOW.rah.push("pinlog"); SECTION.pinlog="settings";
 const _pinsView0=VIEWS.pins;
 VIEWS.pins=(...a)=>{ const v=_pinsView0(...a); loadPinLog(); v.html=v.html.replace('<div class="btns"><button class="btn" data-act="pinNew">',`<div class="btns"><button class="btn ghost" data-go="pinlog" style="margin-bottom:8px"><i class="ti ti-history"></i>Kodlar tarixi${Array.isArray(S.pinlog)?` · ${S.pinlog.length}`:""}</button><button class="btn" data-act="pinNew">`); return v; };
+
+
+
+/* ================= TUZILMA (shtat) + MUROJAATLAR (xodim → rahbarlar) =================
+   xodim: mn_staff.pos = lavozim kodi (ORG ichidan)
+   murojaat: mn_xat {from,fromName,fromPos,kind,text,serious,to:[key],toN:{key:name},at,lastAt,lastBy,st,r:[{k,name,text,at}],seen:{key:at}}
+   key: xodim id, CEO uchun "ceo" */
+ROLE.admin.n="CEO";
+ROLE.xodim={n:"Xodim", i:"ti-user"};
+ROLE_DESC.xodim="O'z kabineti: rahbarlarga xabar, e'tiroz, taklif yozadi";
+ROLE_COL.xodim=["--bl-s","--bl"];
+const ORG=[
+  {id:"top",n:"Rahbariyat",c:"--or",i:"ti-crown",p:[
+    {id:"ceo",n:"CEO",k:1,up:null,r:"admin"},
+    {id:"dir",n:"Direktor",k:1,up:"ceo",r:"direktor"} ]},
+  {id:"oquv",n:"O'quv ishlari",c:"--bl",i:"ti-school",p:[
+    {id:"o1",n:"O'quv ishlari bo'yicha o'rinbosar",k:1,up:"dir",r:"zavuch",head:1},
+    {id:"katta",n:"Katta o'qituvchi",k:0,up:"o1",r:"oqit"},
+    {id:"oqit",n:"O'qituvchi",k:0,up:"katta",r:"oqit"},
+    {id:"psix",n:"Psixolog",k:1,up:"o1",r:"xodim"},
+    {id:"kutub",n:"Kutubxonachi",k:1,up:"o1",r:"xodim"} ]},
+  {id:"manav",n:"Ma'naviy ishlar va ichki monitoring",c:"--vi",i:"ti-shield-check",p:[
+    {id:"o2",n:"Ma'naviy ishlar bo'yicha o'rinbosar, ichki monitoring rahbari",k:1,up:"dir",r:"zavuch",head:1},
+    {id:"nazor",n:"Ichki nazoratchi, ta'minotchi",k:1,up:"o2",r:"xodim"},
+    {id:"tarb",n:"Tarbiyachi ustoz",k:3,up:"o2",r:"komend"},
+    {id:"toza",n:"Tozalik farishtasi",k:5,up:"o2",r:"xodim"},
+    {id:"xoj",n:"Xo'jalik ishlari",k:1,up:"o2",r:"xodim"},
+    {id:"bogb",n:"Bog'bon",k:1,up:"o2",r:"xodim"},
+    {id:"komend",n:"Komendant",k:0,up:"o2",r:"komend"} ]},
+  {id:"moliya",n:"Tashkiliy ta'minot va moliya",c:"--gr",i:"ti-building-bank",p:[
+    {id:"o3",n:"Tashkiliy ta'minot va moliya bo'yicha o'rinbosar",k:1,up:"dir",r:"zavuch",head:1},
+    {id:"mol",n:"Moliyachi",k:1,up:"o3",r:"kuzat"},
+    {id:"shif",n:"Shifokor",k:1,up:"o3",r:"xodim"},
+    {id:"osh",n:"Oshpaz",k:3,up:"o3",r:"xodim"},
+    {id:"idish",n:"Idish-tovoq yuvuvchi",k:1,up:"o3",r:"xodim"} ]},
+  {id:"bosh",n:"Boshlang'ich sinflar",c:"--pk",i:"ti-backpack",p:[
+    {id:"o4",n:"Boshlang'ich sinflar bo'yicha o'rinbosar",k:1,up:"dir",r:"zavuch",head:1},
+    {id:"men",n:"Menejer, marketolog",k:2,up:"o4",r:"xodim"},
+    {id:"kas",n:"Kassir",k:1,up:"o4",up2:"mol",r:"xodim"} ]}
+];
+const POS={}; ORG.forEach(d=>d.p.forEach(p=>{ POS[p.id]={...p,dep:d.id,depN:d.n,c:d.c,i:d.i}; }));
+const posN=id=>POS[id]?.n||"";
+const posOf=t=>t?(POS[t.pos]?t.pos:(t.role==="direktor"?"dir":"")):"";
+const ceoName=()=>S.cfg?.ceo?`${S.cfg.ceo} (CEO)`:"CEO";
+const atPos=id=>id==="ceo"?[{key:"ceo",name:ceoName()}]:staffActive().filter(t=>posOf(t)===id).sort((a,b)=>String(a.fio).localeCompare(String(b.fio),"uz")).map(t=>({key:t.id,name:t.fio,t}));
+const myKey=()=>role()==="admin"?"ceo":(S.me?.staffId||"");
+const myPos=()=>role()==="admin"?"ceo":posOf(myStaff());
+/* yuqoridagi lavozimlar, pastdan tepaga */
+function chainUp(pid,r=role()){
+  const out=[]; let p=POS[pid];
+  if(!p){ return r==="direktor"?["ceo"]:["dir","ceo"]; }
+  if(p.up2) out.push(p.up2);
+  let u=p.up, g=0; while(u&&g++<10){ if(!out.includes(u)) out.push(u); u=POS[u]?.up; }
+  if(p.up2){ /* kassir: moliyachidan keyin o4 */ const i=out.indexOf(p.up2); out.splice(i,1); out.splice(1,0,p.up2); }
+  return out;
+}
+/* oddiy holatda kimga: eng yaqin to'ldirilgan rahbar(lar) */
+function defaultTo(levels){ for(const pid of levels){ const ppl=atPos(pid); if(ppl.length) return ppl.map(x=>x.key); } return ["ceo"]; }
+
+/* ---------- jonli ma'lumot ---------- */
+S.xat={}; S.xatParts={};
+const _enterApp2=enterApp;
+enterApp=function(){
+  _enterApp2();
+  S.xat={}; S.xatParts={};
+  if(role()==="ota") return;
+  const sub=(ref,fn)=>unsub.push(onSnapshot(ref,fn,e=>console.warn(e)));
+  const put=(k,s)=>{ S.xatParts[k]=s.docs.map(d=>({id:d.id,...d.data()})); const m={}; Object.values(S.xatParts).flat().forEach(x=>m[x.id]=x); S.xat=m; later(); };
+  const k=myKey(); if(!k) return;
+  if(isBoss()&&!S.preview) setTimeout(()=>{ if(S.loaded?.cfg&&S.cfg.ceo!==S.me.name) setDoc(doc(db,C.meta,"school"),{ceo:S.me.name},{merge:true}).catch(()=>{}); },2500);
+  if(isBoss()) sub(query(collection(db,C.xat),orderBy("at","desc"),limit(400)),s=>put("all",s));
+  else{ sub(query(collection(db,C.xat),where("to","array-contains",k)),s=>put("in",s)); sub(query(collection(db,C.xat),where("from","==",k)),s=>put("out",s)); }
+};
+C.xat="mn_xat";
+const xatList=()=>Object.values(S.xat||{}).sort((a,b)=>(b.lastAt||b.at)-(a.lastAt||a.at));
+const xatMineIn=x=>(x.to||[]).includes(myKey());
+const xatMineOut=x=>x.from===myKey();
+const xatUnread=x=>(xatMineIn(x)||xatMineOut(x))&&x.lastBy!==myKey()&&((x.seen||{})[myKey()]||0)<(x.lastAt||x.at);
+const xatNew=()=>xatList().filter(xatUnread).length;
+const KIND={ xabar:["Xabar","ti-message","--bl"], etiroz:["E'tiroz","ti-alert-circle","--or"], taklif:["Taklif","ti-bulb","--gr"] };
+const canWriteUp=()=>role()!=="admin"&&role()!=="ota"&&!!myKey();
+
+/* ---------- ro'yxat ---------- */
+function xatRow(x){
+  const k=KIND[x.kind]||KIND.xabar, un=xatUnread(x), out=xatMineOut(x)&&!xatMineIn(x);
+  const who=out?"→ "+Object.values(x.toN||{}).join(", "):x.fromName+(x.fromPos?" · "+x.fromPos:"");
+  const last=(x.r||[]).length?x.r[x.r.length-1]:null;
+  return `<button class="row" data-go="xt/${x.id}" style="${x.serious?"background:var(--pk-s)":""}">${icBox(x.serious?"ti-urgent":k[1],x.serious?"--pk":k[2])}<div class="mid"><b style="${un?"":"font-weight:500"}">${esc(who)}</b><small>${x.serious?'<b style="color:var(--pk)">O\'ta jiddiy</b> · ':""}${k[0]} · ${esc(String(last?last.name+": "+last.text:x.text).slice(0,70))}</small><small>${ago(x.lastAt||x.at)}${(x.r||[]).length?` · ${x.r.length} javob`:""}${x.st==="hal"?" · hal qilindi":""}</small></div>${un?'<span class="tg" style="background:var(--pk);color:#fff">yangi</span>':x.st==="hal"?tag("hal","--gr-s","--gr"):""}</button>`;
+}
+function xatListHtml(){
+  const tab=S.ui.xt||(canWriteUp()&&!xatList().some(xatMineIn)?"out":"in");
+  let l=xatList();
+  if(tab==="in") l=l.filter(xatMineIn); else if(tab==="out") l=l.filter(xatMineOut); else if(tab==="jiddiy") l=l.filter(x=>x.serious);
+  return `<div class="card" style="margin-top:10px">${l.length?l.map(xatRow).join(""):emptyBox("ti-mail-opened",tab==="out"?"Siz hali murojaat yozmagansiz":"Murojaat yo'q")}</div>`;
+}
+VIEWS.xat=()=>{
+  const all=xatList(), tab=S.ui.xt||(canWriteUp()&&!all.some(xatMineIn)?"out":"in");
+  const tb=(k,t)=>`<button data-act="ui" data-k="xt" data-v="${k}" aria-pressed="${tab===k}">${t}</button>`;
+  const nIn=all.filter(x=>xatMineIn(x)&&xatUnread(x)).length, nOut=all.filter(x=>xatMineOut(x)&&xatUnread(x)).length;
+  let h=`<div class="tabs" style="margin-top:12px">${tb("in","Menga"+(nIn?` (${nIn})`:""))}${canWriteUp()?tb("out","Yuborganim"+(nOut?` (${nOut})`:"")):""}${isBoss()?tb("all","Hammasi")+tb("jiddiy","Jiddiy"):""}</div>`;
+  h+=`<div id="lst">${xatListHtml()}</div>`;
+  if(isBoss()&&tab==="all") h+=`<p class="mini" style="margin:8px 16px">Siz CEO sifatida maktabdagi barcha murojaatlarni ko'rasiz.</p>`;
+  if(canWriteUp()) h+=`<div class="btns"><button class="btn" data-act="xatNew"><i class="ti ti-pencil"></i>Yangi murojaat yozish</button></div>`;
+  return {bar:{t:"Murojaatlar",s:canWriteUp()?"Rahbarlaringiz bilan yozishma":"Xodimlardan kelgan",back:"home"},html:h,list:xatListHtml};
+};
+
+/* ---------- bitta murojaat ---------- */
+VIEWS.xt=id=>{
+  const x=S.xat[id];
+  if(!x) return {bar:{t:"Murojaat",back:"xat"},html:`<div class="card" style="margin-top:12px">${emptyBox("ti-mail-question","Murojaat topilmadi")}</div>`};
+  if(xatUnread(x)&&!S.preview){ const k=myKey(); x.seen={...(x.seen||{}),[k]:Date.now()}; updateDoc(doc(db,C.xat,id),{["seen."+k]:Date.now()}).catch(()=>{}); }
+  const k=KIND[x.kind]||KIND.xabar, mine=xatMineIn(x)||xatMineOut(x)||isBoss();
+  const seenBy=Object.entries(x.toN||{}).map(([kk,n])=>`${esc(n)}${(x.seen||{})[kk]?' <i class="ti ti-checks" style="color:var(--gr)"></i>':""}`).join(", ");
+  const bub=(name,text,at,me)=>`<div style="display:flex;${me?"justify-content:flex-end":""};margin:8px 14px"><div style="max-width:86%;background:${me?"var(--bl-s)":"#fff"};border:1px solid var(--line);border-radius:14px;padding:9px 12px"><p class="mini" style="font-weight:600;color:var(--ink,#222)">${esc(name)}</p><p style="font-size:14px;white-space:pre-wrap;margin-top:3px">${esc(text)}</p><p class="mini" style="text-align:right;margin-top:3px">${dTxt(dk(at))} ${hm(at)}</p></div></div>`;
+  let h=`<div class="card cpad" style="margin-top:12px;${x.serious?"border:1.5px solid var(--pk)":""}"><div style="display:flex;gap:10px;align-items:center">${icBox(x.serious?"ti-urgent":k[1],x.serious?"--pk":k[2])}<div style="flex:1;min-width:0"><b style="font-size:15px">${k[0]}${x.serious?' · <span style="color:var(--pk)">O\'ta jiddiy</span>':""}</b><p class="mini">${dTxt(dk(x.at))} ${hm(x.at)} · ${x.st==="hal"?"hal qilindi":"ochiq"}</p></div></div>
+    <div class="li" style="padding-left:0;padding-right:0"><span>Kimdan</span><b>${esc(x.fromName)}${x.fromPos?`<br><small class="mini">${esc(x.fromPos)}</small>`:""}</b></div>
+    <div class="li" style="padding-left:0;padding-right:0;border:0"><span>Kimga</span><b style="text-align:right">${seenBy}</b></div></div>`;
+  h+=bub(x.fromName,x.text,x.at,x.from===myKey());
+  (x.r||[]).forEach(r=>{ h+=bub(r.name,r.text,r.at,r.k===myKey()); });
+  if(mine&&!S.preview){
+    h+=`<div class="btns"><button class="btn" data-act="xatRe" data-id="${id}"><i class="ti ti-arrow-back-up"></i>Javob yozish</button>
+      ${xatMineIn(x)||isBoss()?`<button class="btn ghost" data-act="xatSt" data-id="${id}"><i class="ti ${x.st==="hal"?"ti-refresh":"ti-check"}"></i>${x.st==="hal"?"Qayta ochish":"Hal qilindi deb belgilash"}</button>`:""}</div>`;
+  }
+  return {bar:{t:k[0],s:x.fromName,back:"xat"},html:h};
+};
+
+/* ---------- yangi murojaat ---------- */
+A.xatNew=()=>{
+  if(S.preview) return toast("Sinov ko'rinishida yuborib bo'lmaydi");
+  if(!canWriteUp()) return;
+  const lv=chainUp(myPos());
+  openSheet("xatNew",{kind:"xabar",text:"",serious:false,lv,to:defaultTo(lv)});
+};
+SHEETS.xatNew=()=>{
+  const f=S.f;
+  const kb=(k)=>{ const q=KIND[k]; return `<button data-act="fset2" data-k="kind" data-v="${k}" aria-pressed="${f.kind===k}"><i class="ti ${q[1]}"></i> ${q[0]}</button>`; };
+  const forced=f.serious?new Set([...atPos("dir").map(x=>x.key),"ceo"]):new Set();
+  const rows=f.lv.map(pid=>{ const ppl=atPos(pid); if(!ppl.length) return ""; return `<p class="mini" style="margin:10px 2px 4px">${esc(posN(pid))}</p>`+ppl.map(p=>{ const on=f.to.includes(p.key)||forced.has(p.key), lock=forced.has(p.key);
+    return `<button class="opt" style="margin-bottom:6px" data-act="xatTo" data-key="${p.key}" ${lock?'aria-disabled="true"':""}>${p.t?av(p.t,p.t.id):icBox("ti-crown","--or")}<div class="mid"><b>${esc(p.name)}</b>${lock?'<small style="color:var(--pk)">O\'ta jiddiy — albatta boradi</small>':""}</div><span class="tgl" aria-pressed="${on}"></span></button>`; }).join(""); }).join("");
+  return ["Yangi murojaat",`<p class="lb">Turi</p><div class="pick">${kb("xabar")}${kb("etiroz")}${kb("taklif")}</div>
+    <p class="lb">Matn</p>${area("text","Nimani aytmoqchisiz? Aniq va qisqa yozing.")}
+    <button class="opt" style="margin-top:10px;${f.serious?"border-color:var(--pk);background:var(--pk-s)":""}" data-act="xatSer">${icBox("ti-urgent","--pk")}<div class="mid"><b>O'ta jiddiy masala</b><small>Direktor va CEO ga ham albatta boradi</small></div><span class="tgl" aria-pressed="${!!f.serious}"></span></button>
+    <p class="lb" style="margin-top:14px">Kimga yuboriladi</p><p class="mini" style="margin:-2px 2px 4px">Faqat sizdan yuqoridagi rahbarlar. Bir nechtasini tanlash mumkin.</p>${rows||'<p class="mini">Rahbarlar hali kiritilmagan — xabar CEO ga boradi.</p>'}
+    <p class="err" id="fErr"></p><button class="btn" data-act="xatSend"><i class="ti ti-send"></i>Yuborish</button>`];
+};
+A.xatTo=d=>{ const f=S.f; if(f.serious&&(d.key==="ceo"||atPos("dir").some(x=>x.key===d.key))) return; f.to=f.to.includes(d.key)?f.to.filter(x=>x!==d.key):[...f.to,d.key]; renderSheet(); };
+A.xatSer=()=>{ S.f.serious=!S.f.serious; renderSheet(); };
+A.xatSend=async()=>{
+  const f=S.f, text=(f.text||"").trim(); if(text.length<3) return $("fErr").textContent="Matnni yozing.";
+  const names={}; f.lv.forEach(pid=>atPos(pid).forEach(p=>names[p.key]=p.name)); names.ceo=ceoName();
+  let to=[...f.to]; if(f.serious){ atPos("dir").forEach(x=>to.push(x.key)); to.push("ceo"); }
+  to=[...new Set(to)].filter(k=>k!==myKey()); if(!to.length) return $("fErr").textContent="Kamida bitta rahbarni tanlang.";
+  const toN={}; to.forEach(k=>toN[k]=names[k]||S.staff[k]?.fio||"CEO");
+  const at=Date.now(), me=myStaff();
+  try{ await addDoc(collection(db,C.xat),{from:myKey(),fromName:S.me.name,fromPos:posN(myPos())||ROLE[role()]?.n||"",kind:f.kind,text,serious:!!f.serious,to,toN,at,lastAt:at,lastBy:myKey(),st:"ochiq",r:[],seen:{[myKey()]:at}});
+    logAct(`Murojaat yubordi${f.serious?" (o'ta jiddiy)":""}: ${Object.values(toN).join(", ")}`); closeSheet(); S.ui.xt="out"; toast(`Yuborildi · ${Object.values(toN).join(", ")}`); go("xat"); }catch(e){ failed(e); }
+};
+A.xatRe=d=>openSheet("xatRe",{id:d.id,text:""});
+SHEETS.xatRe=()=>["Javob",`${area("text","Javobingiz…")}<p class="err" id="fErr"></p><button class="btn" data-act="xatReSend"><i class="ti ti-send"></i>Yuborish</button>`];
+A.xatReSend=async()=>{ const f=S.f, text=(f.text||"").trim(); if(!text) return $("fErr").textContent="Javobni yozing."; const at=Date.now(), k=myKey();
+  try{ await updateDoc(doc(db,C.xat,f.id),{r:arrayUnion({k,name:S.me.name,text,at}),lastAt:at,lastBy:k,["seen."+k]:at}); closeSheet(); toast("Yuborildi"); }catch(e){ failed(e); } };
+A.xatSt=async d=>{ const x=S.xat[d.id]; if(!x) return; const st=x.st==="hal"?"ochiq":"hal", at=Date.now(), k=myKey();
+  try{ await updateDoc(doc(db,C.xat,d.id),{st,r:arrayUnion({k,name:S.me.name,text:st==="hal"?"✓ Hal qilindi deb belgiladi":"Qayta ochdi",at}),lastAt:at,lastBy:k}); toast(st==="hal"?"Hal qilindi":"Qayta ochildi"); }catch(e){ failed(e); } };
+
+/* ---------- TUZILMA ---------- */
+VIEWS.tuz=()=>{
+  const rah=isRah();
+  const person=p=>p.t&&rah?`<button class="tg" style="background:var(--bg);color:var(--ink,#222);font-weight:500;margin:2px 4px 2px 0" data-go="st/${p.t.id}">${esc(p.name)}</button>`:`<span class="tg" style="background:var(--bg);color:var(--ink,#222);font-weight:500;margin:2px 4px 2px 0">${esc(p.name)}</span>`;
+  let tot=0, band=0;
+  const prow=(p,isHead)=>{ const ppl=atPos(p.id), n=ppl.length; if(p.k){ tot+=p.k; band+=Math.min(n,p.k); }
+    const st=p.k?(n>=p.k?tag(`${n}/${p.k}`,"--gr-s","--gr"):tag(`${n}/${p.k} · ${p.k-n} bo'sh`,"--or-s","--or")):tag(`${n} kishi`,"--line2","--muted");
+    const upTxt=p.up?`Bo'ysunadi: ${posN(p.up)}${p.up2?" va "+posN(p.up2):""}`:"";
+    return `<div class="row" style="align-items:flex-start;${isHead?"background:var(--bg)":""}"><div class="mid"><b>${esc(p.n)}</b>${upTxt?`<small>${esc(upTxt)}</small>`:""}<div style="margin-top:4px">${ppl.length?ppl.map(person).join(""):'<span class="mini">— hali hech kim yo\'q</span>'}</div></div>${st}</div>`; };
+  let body="";
+  ORG.forEach(d=>{
+    const heads=d.p.filter(p=>d.id==="top"||p.head), rest=d.p.filter(p=>!(d.id==="top"||p.head));
+    body+=sec(`<span style="display:inline-flex;gap:8px;align-items:center">${icBox(d.i,d.c,"sm")}${esc(d.n)}</span>`)+`<div class="card">${heads.map(p=>prow(p,true)).join("")}${rest.map(p=>prow(p,false)).join("")}</div>`;
+  });
+  const noPos=staffActive().filter(t=>!posOf(t));
+  let h=`<div class="kp4" style="grid-template-columns:repeat(3,1fr);margin-top:12px"><div><b class="num">${tot}</b><span>shtat</span></div><div><b class="num" style="color:var(--gr)">${band}</b><span>band</span></div><div><b class="num" style="color:var(--or)">${Math.max(0,tot-band)}</b><span>bo'sh</span></div></div>
+    <div class="note" style="background:#fff;border:1px solid var(--line)"><i class="ti ti-sitemap" style="color:var(--bl)"></i><div>CEO → Direktor → 4 o'rinbosar → ularning xodimlari. Xodim murojaat yozsa, faqat o'zidan yuqoridagilarga boradi.</div></div>`+body;
+  if(rah&&noPos.length) h+=sec(`Lavozimi belgilanmagan (${noPos.length})`)+`<p class="mini" style="margin:-4px 16px 8px">Xodimni oching → qalamcha → bo'lim va lavozimni tanlang.</p><div class="card">${noPos.map(t=>`<button class="row" data-go="st/${t.id}">${av(t,t.id)}<div class="mid"><b>${esc(t.fio)}</b><small>${esc(ROLE[t.role]?.n||"")}</small></div><i class="ti ti-chevron-right chev"></i></button>`).join("")}</div>`;
+  if(canAddStaff()) h+=`<div class="btns"><button class="btn" data-act="stfNew"><i class="ti ti-user-plus"></i>Xodim qo'shish</button></div>`;
+  return {bar:{t:"Maktab tuzilmasi",s:"Kim kimga bo'ysunadi",back:"home"},html:h};
+};
+
+/* ---------- xodim formasi: bo'lim va lavozim ---------- */
+const _stfSheet0=SHEETS.stf;
+SHEETS.stf=()=>{
+  const out=_stfSheet0(); const f=S.f; if(f.step!==1) return out;
+  let [title,body]=out;
+  const dep=f.dep||POS[f.pos]?.dep||"";
+  const depBtn=d=>`<button data-act="fset2" data-k="dep" data-v="${d.id}" aria-pressed="${dep===d.id}">${esc(d.n)}</button>`;
+  const D=ORG.find(d=>d.id===dep);
+  const posBtns=D?D.p.filter(p=>p.id!=="ceo"&&(p.id!=="dir"||isBoss())).map(p=>{ const n=atPos(p.id).filter(x=>x.key!==f.id).length; const full=p.k&&n>=p.k;
+    return `<button class="opt" style="margin-bottom:6px" data-act="stfPos" data-v="${p.id}" aria-pressed="${f.pos===p.id}">${icBox(p.head||p.id==="dir"?"ti-crown":D.i,D.c)}<div class="mid"><b>${esc(p.n)}</b><small>${p.k?`Shtat: ${p.k} · band: ${n}${full?" · to'lgan":""}`:`Hozir: ${n} kishi`}</small></div></button>`; }).join(""):"";
+  const pick=`<p class="lb">Bo'lim</p><div class="pick">${ORG.map(depBtn).join("")}</div>${D?`<p class="lb">Lavozim (shtat bo'yicha)</p>${posBtns}`:""}`;
+  body=body.replace('<p class="lb">Lavozimi — ilovada nima qila oladi</p>',pick+'<p class="lb">Ilovada nima qila oladi</p>');
+  const xb=`<button class="opt" data-act="fset2" data-k="role" data-v="xodim" aria-pressed="${f.role==="xodim"}">${icBox("ti-user","--bl")}<div class="mid"><b>${ROLE.xodim.n}</b><small>${ROLE_DESC.xodim}</small></div></button>`;
+  body=body.replace(/(<button class="opt" data-act="fset2" data-k="role" data-v="kuzat"[\s\S]*?<\/button>)/,"$1"+xb);
+  return [title,body];
+};
+A.stfPos=d=>{ const p=POS[d.v]; if(!p) return; S.f.pos=d.v; S.f.dep=p.dep; if(p.r&&p.r!=="admin"&&(p.r!=="direktor"||isBoss())) S.f.role=p.r; renderSheet(); };
+const _stfEdit0=A.stfEdit, _yukEdit0=A.yukEdit;
+A.stfEdit=d=>{ _stfEdit0(d); const t=S.staff[d.tid]; if(t&&S.sheet==="stf"){ S.f.pos=t.pos||posOf(t)||""; S.f.dep=POS[S.f.pos]?.dep||""; renderSheet(); } };
+const _stfSave0=A.stfSave;
+A.stfSave=async(...a)=>{
+  const pos=S.f.pos||"", wasId=S.f.id, fio=(S.f.fio||"").trim(), h0=location.hash; if(!fio) return _stfSave0(...a);
+  await _stfSave0(...a);
+  const id=wasId||(location.hash!==h0?(location.hash.match(/^#\/st\/([^/]+)/)||[])[1]:"");
+  if(id&&S.staff[id]?.pos!==pos) updateDoc(doc(db,C.stf,id),{pos}).catch(failed);
+};
+/* tekshirish sahifasida lavozim */
+const _stfSheet1=SHEETS.stf;
+SHEETS.stf=()=>{ const out=_stfSheet1(); const f=S.f; if(f.step!==3) return out;
+  return [out[0],out[1].replace('<div class="li"><span>Lavozim</span>',`<div class="li"><span>Shtat lavozimi</span><b>${f.pos?esc(posN(f.pos)):'<span style="color:var(--or)">belgilanmagan</span>'}</b></div><div class="li"><span>Ilovada</span>`)]; };
+
+/* ---------- xodim sahifasida lavozim va rahbari ---------- */
+const _stView0=VIEWS.st;
+VIEWS.st=id=>{ const v=_stView0(id); const t=S.staff[id]; if(!t) return v; const pid=posOf(t);
+  const lv=chainUp(pid||"_",t.role), boss=lv.map(x=>atPos(x)).find(a=>a.length)||[];
+  const li=`<div class="li"><span>Shtat lavozimi</span><b>${pid?esc(posN(pid))+`<br><small class="mini">${esc(POS[pid].depN)}</small>`:'<span style="color:var(--or)">belgilanmagan</span>'}</b></div><div class="li"><span>Rahbari</span><b>${boss.length?boss.map(x=>esc(x.name)).join(", "):"—"}</b></div>`;
+  v.html=v.html.replace(/(<div class="li"><span>Telefon<\/span>)/,li+"$1").replace('<span>Lavozim</span>','<span>Ilovada</span>');
+  return v; };
+
+/* ---------- kirish nuqtalari ---------- */
+["xat","xt","tuz"].forEach(k=>{ ALLOW.rah.push(k); ALLOW.oqit.push(k); ALLOW.other.push(k); });
+SECTION.xt="xat";
+const xatNote=()=>{ const n=xatNew(); return n?`<button class="note" style="background:var(--pk-s);border:1px solid #f5c2cf;width:calc(100% - 28px);text-align:left" data-go="xat"><i class="ti ti-mail" style="color:var(--pk)"></i><div style="flex:1"><b>${n} ta yangi murojaat</b>Xodimlar yozgan xabar va e'tirozlar</div><i class="ti ti-chevron-right chev"></i></button>`:""; };
+const _rahHome1=rahHome;
+rahHome=function(){ const v=_rahHome1(); const n=xatNew(); const tile=(i,c,tt,g,b)=>`<button data-go="${g}">${icBox(i,c)}${tt}${b?`<span class="soon" style="background:var(--pk);color:#fff">${b}</span>`:""}</button>`;
+  v.html=v.html.replace(/(<div class="sec"><h3>Bo'limlar<\/h3><\/div><div class="qa">)/,`$1${tile("ti-sitemap","--vi","Tuzilma","tuz")}${tile("ti-mail","--pk","Murojaatlar","xat",n||"")}`);
+  const nt=xatNote(); if(nt) v.html=v.html.replace(/(<div class="sec"><h3>Bu hafta intizom)/,nt+"$1");
+  return v; };
+const _tHome1=tHome;
+tHome=function(){ const v=_tHome1(); const n=xatNew();
+  const card=`<div class="card" style="margin-top:12px"><button class="row" data-go="xat">${icBox("ti-mail","--pk")}<div class="mid"><b>Murojaatlar${n?` · ${n} yangi`:""}</b><small>Rahbarlarga xabar, e'tiroz, taklif</small></div><i class="ti ti-chevron-right chev"></i></button><button class="row" data-go="tuz">${icBox("ti-sitemap","--vi")}<div class="mid"><b>Maktab tuzilmasi</b><small>Kim kimga bo'ysunadi</small></div><i class="ti ti-chevron-right chev"></i></button></div>`;
+  v.html+=card; return v; };
+const _otherHome0=otherHome;
+otherHome=function(){
+  const r=role(); if(r!=="komend"&&r!=="xodim") return _otherHome0();
+  const t=myStaff(), pid=myPos(), n=xatNew(), lv=chainUp(pid||"_"), boss=lv.map(x=>atPos(x)).find(a=>a.length)||[];
+  const row=(i,c,b,s,a)=>`<button class="row" ${a}>${icBox(i,c)}<div class="mid"><b>${b}</b><small>${s}</small></div><i class="ti ti-chevron-right chev"></i></button>`;
+  return {html:`<div class="hero"><div class="row1"><div><p class="hi">${greet()}</p><p class="nm">${esc(S.me.name)}</p></div><button class="ib" data-go="xat" aria-label="Murojaatlar"><i class="ti ti-bell"></i>${n?`<span class="bd">${n}</span>`:""}</button></div><div class="tags"><span class="htag w">${esc(pid?posN(pid):ROLE[r]?.n||"")}</span><span class="htag">${dateLong()}</span></div></div>
+    <div class="card" style="margin-top:-36px;position:relative">${pid?`<div class="li"><span>Bo'lim</span><b>${esc(POS[pid].depN)}</b></div>`:""}<div class="li"><span>Rahbaringiz</span><b>${boss.length?boss.map(x=>esc(x.name)).join(", "):"—"}</b></div></div>
+    ${xatNote()}
+    ${sec("Mening kabinetim")}<div class="card">
+      ${row("ti-pencil","--bl","Rahbarga murojaat yozish","Xabar, e'tiroz yoki taklif",'data-act="xatNew"')}
+      ${row("ti-mail","--pk",`Murojaatlarim${n?` · ${n} yangi`:""}`,"Yuborganlarim va javoblar",'data-go="xat"')}
+      ${row("ti-sitemap","--vi","Maktab tuzilmasi","Kim kimga bo'ysunadi",'data-go="tuz"')}
+      ${row("ti-user","--or","Profil","Rasm, ma'lumot",'data-go="me"')}</div>
+    ${r==="komend"?`<div class="note" style="background:#fff;border:1px solid var(--line)"><i class="ti ti-tools" style="color:var(--bl)"></i><div>O'quvchilarga rag'bat va jazo berish bo'limi keyingi yangilanishda qo'shiladi.</div></div>`:""}
+    <div class="btns"><button class="btn redo" data-act="logoutAsk"><i class="ti ti-logout"></i>Chiqish</button></div>`};
+};
+/* rahbarlar profili va yon menyu */
+const _me2=VIEWS.me2;
+VIEWS.me2=(...a)=>{ const v=_me2(...a); const n=xatNew(); const add=`<div class="card" style="margin-top:12px"><button class="row" data-go="xat">${icBox("ti-mail","--pk")}<div class="mid"><b>Murojaatlar${n?` · ${n} yangi`:""}</b><small>${canWriteUp()?"Rahbarlarga yozish va javoblar":"Xodimlardan kelgan"}</small></div><i class="ti ti-chevron-right chev"></i></button><button class="row" data-go="tuz">${icBox("ti-sitemap","--vi")}<div class="mid"><b>Maktab tuzilmasi</b><small>Kim kimga bo'ysunadi</small></div><i class="ti ti-chevron-right chev"></i></button></div>`;
+  const i=v.html.indexOf('<div class="btns">'); v.html=i>0?v.html.slice(0,i)+add+v.html.slice(i):v.html+add; return v; };
+const _tme1=VIEWS.tme;
+VIEWS.tme=function(){ const v=_tme1(); const add=`<div class="card" style="margin-top:12px"><button class="row" data-go="tuz">${icBox("ti-sitemap","--vi")}<div class="mid"><b>Maktab tuzilmasi</b><small>Kim kimga bo'ysunadi</small></div><i class="ti ti-chevron-right chev"></i></button></div>`;
+  const i=v.html.indexOf('<div class="btns">'); v.html=i>0?v.html.slice(0,i)+add+v.html.slice(i):v.html+add; return v; };
+const _render1=render;
+render=function(){ _render1(); const sd=$("side"); if(sd&&isRah()&&sd.innerHTML&&!sd.querySelector('[data-go="tuz"]')){ const cur=S.route[0]; const n=xatNew();
+  const btn=(k,i,t,c)=>`<button data-go="${k}" ${cur===k||(k==="xat"&&cur==="xt")?'aria-current="page"':""}><i class="ti ${i}"></i>${t}${c?`<span class="cnt">${c}</span>`:""}</button>`;
+  const st=sd.querySelector('[data-go="staff"]'); if(st) st.insertAdjacentHTML("afterend",btn("tuz","ti-sitemap","Tuzilma")+btn("xat","ti-mail","Murojaatlar",n)); }
+  /* pastki menyuda Bosh tugmasiga yangi murojaatlar soni */
+  const n=xatNew(); if(n){ const hb=document.querySelector('#nav [data-go="home"] .ni'); if(hb&&!hb.querySelector("b")) hb.insertAdjacentHTML("beforeend",`<b>${n}</b>`); }
+};
 
 </script>
 </body>
